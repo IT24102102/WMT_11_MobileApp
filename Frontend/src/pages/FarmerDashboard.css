@@ -1,0 +1,135 @@
+.farmer-dashboard-page {
+    min-height: 100vh;
+    background-color: #f4f7f6;
+    font-family: 'Inter', sans-serif;
+}
+
+.dashboard-container {
+    max-width: 95%;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.dashboard-header {
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.dashboard-header h1 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-header p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.dashboard-card {
+    height: 280px;
+    perspective: 1000px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    cursor: pointer;
+}
+
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.dashboard-card:hover .card-inner {
+    transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-front {
+    background-color: white;
+}
+
+.card-back {
+    background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
+    color: white;
+    transform: rotateY(180deg);
+}
+
+.card-back h3 {
+    color: white !important;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+}
+
+.card-back p {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.go-btn {
+    margin-top: 20px;
+    padding: 8px 20px;
+    background: white;
+    color: #1b5e20;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.card-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1.2rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.card-front h3 {
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.card-front p {
+    color: #64748b;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+
+    .dashboard-header h1 {
+        font-size: 2rem;
+    }
+}
