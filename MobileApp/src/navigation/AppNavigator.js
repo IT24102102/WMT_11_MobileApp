@@ -8,6 +8,7 @@ import LandingScreen from '../screens/LandingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import FarmerDashboard from '../screens/FarmerDashboard';
+import AdminDashboard from '../screens/AdminDashboard';
 import HomeScreen from '../screens/HomeScreen';
 import FeaturePlaceholderScreen from '../screens/FeaturePlaceholderScreen';
 import LeafDiagnosticScreen from '../screens/LeafDiagnosticScreen';
@@ -38,7 +39,11 @@ const AppNavigator = () => {
         ) : (
           // Main App screens
           <>
-            <Stack.Screen name="Home" component={FarmerDashboard} />
+            {userInfo?.role === 'ADMIN' ? (
+              <Stack.Screen name="Home" component={AdminDashboard} />
+            ) : (
+              <Stack.Screen name="Home" component={FarmerDashboard} />
+            )}
             <Stack.Screen name="RegisterCrop" component={FeaturePlaceholderScreen} initialParams={{ title: 'Register Crop' }} />
             <Stack.Screen name="FinancialAid" component={FeaturePlaceholderScreen} initialParams={{ title: 'Financial Aid' }} />
             <Stack.Screen name="MachineryHub" component={FeaturePlaceholderScreen} initialParams={{ title: 'Machinery Hub' }} />
