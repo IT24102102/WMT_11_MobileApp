@@ -9,6 +9,8 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import FarmerDashboard from '../screens/FarmerDashboard';
 import HomeScreen from '../screens/HomeScreen';
+import FeaturePlaceholderScreen from '../screens/FeaturePlaceholderScreen';
+import LeafDiagnosticScreen from '../screens/LeafDiagnosticScreen';
 
 const Stack = createStackNavigator();
 
@@ -37,7 +39,12 @@ const AppNavigator = () => {
           // Main App screens
           <>
             <Stack.Screen name="Home" component={FarmerDashboard} />
-            {/* Keeping the old HomeScreen as a fallback if needed */}
+            <Stack.Screen name="RegisterCrop" component={FeaturePlaceholderScreen} initialParams={{ title: 'Register Crop' }} />
+            <Stack.Screen name="FinancialAid" component={FeaturePlaceholderScreen} initialParams={{ title: 'Financial Aid' }} />
+            <Stack.Screen name="MachineryHub" component={FeaturePlaceholderScreen} initialParams={{ title: 'Machinery Hub' }} />
+            <Stack.Screen name="AgriProducts" component={FeaturePlaceholderScreen} initialParams={{ title: 'Agri Products' }} />
+            <Stack.Screen name="SellHarvest" component={FeaturePlaceholderScreen} initialParams={{ title: 'Sell Harvest' }} />
+            <Stack.Screen name="LeafDiagnostic" component={LeafDiagnosticScreen} />
             <Stack.Screen name="Profile" component={HomeScreen} />
           </>
         )}

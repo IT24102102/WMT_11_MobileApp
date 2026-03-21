@@ -9,17 +9,23 @@ const LoginScreen = ({ navigation }) => {
   const { login } = useContext(AuthContext);
 
   const handleLogin = async () => {
+    console.log('Login button clicked');
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
     setLoading(true);
+    console.log('Calling AuthContext.login...');
     const result = await login(email, password);
+    console.log('AuthContext.login result:', result);
     setLoading(false);
 
     if (!result.success) {
+      console.log('Login failed, showing alert...');
       Alert.alert('Login Failed', result.error);
+    } else {
+      console.log('Login success! AppNavigator should now redirect.');
     }
   };
 
@@ -28,6 +34,9 @@ const LoginScreen = ({ navigation }) => {
       <View style={styles.card}>
         <Text style={styles.title}>AgroLanka</Text>
         <Text style={styles.subtitle}>Welcome back! Please login.</Text>
+        <Text style={{ fontSize: 10, color: 'blue', textAlign: 'center', marginBottom: 10 }}>
+          Debug: Connecting to http://localhost:5000/api
+        </Text>
 
         <TextInput
           style={styles.input}

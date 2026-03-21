@@ -1,20 +1,17 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import UniversalStorage from '../utils/UniversalStorage';
 
 const apiClient = axios.create({
-  baseURL: 'https://odd-friends-lie.loca.lt/api', 
+  baseURL: 'http://localhost:5000/api', 
   headers: {
     'Content-Type': 'application/json',
-    'Bypass-Tunnel-Reminder': 'true', // Required for localtunnel to bypass the intro page
   },
 });
-
-
 
 // Add a request interceptor to include the JWT token
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = await SecureStore.getItemAsync('userToken');
+    const token = await UniversalStorage.getItem('userToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

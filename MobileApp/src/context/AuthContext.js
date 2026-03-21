@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import UniversalStorage from '../utils/UniversalStorage';
 import apiClient from '../api/apiClient';
 
 export const AuthContext = createContext();
@@ -12,19 +12,23 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       console.log("Attempting login for:", email);
+      console.log("Using baseURL:", apiClient.defaults.baseURL);
       const response = await apiClient.post('/auth/login', { email, password });
-      console.log("Login successful:", response.data._id);
+      console.log("Login API Response Status:", response.status);
+      console.log("Login successful content:", !!response.data);
       const { token, ...user } = response.data;
       
       setUserToken(token);
       setUserInfo(user);
-      await SecureStore.setItemAsync('userToken', token);
-      await SecureStore.setItemAsync('userInfo', JSON.stringify(user));
+      await UniversalStorage.setItem('userToken', token);
+      await UniversalStorage.setItem('userInfo', JSON.stringify(user));
       
       return { success: true };
     } catch (e) {
-      console.log("Login error details:", e.response?.data || e.message);
-      return { success: false, error: e.response?.data?.message || 'Login failed' };
+      console.error("Login Error Object:", e);
+      console.log("Login error data:", e.response?.data);
+      console.log("Login error message:", e.message);
+      return { success: false, error: e.response?.data?.message || e.message || 'Login failed' };
     }
   };
 
@@ -38,8 +42,8 @@ export const AuthProvider = ({ children }) => {
       
       setUserToken(token);
       setUserInfo(user);
-      await SecureStore.setItemAsync('userToken', token);
-      await SecureStore.setItemAsync('userInfo', JSON.stringify(user));
+      await UniversalStorage.setItem('userToken', token);
+      await UniversalStorage.setItem('userInfo', JSON.stringify(user));
       
       return { success: true };
     } catch (e) {
@@ -52,15 +56,20 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     setUserToken(null);
     setUserInfo(null);
-    await SecureStore.deleteItemAsync('userToken');
-    await SecureStore.deleteItemAsync('userInfo');
+    await UniversalStorage.removeItem('userToken');
+    await UniversalStorage.removeItem('userInfo');
+  };
+
+  const updateUserInfo = async (newUser) => {
+    setUserInfo(newUser);
+    await SecureStore.setItemAsync('userInfo', JSON.stringify(newUser));
   };
 
   const isLoggedIn = async () => {
     try {
       setIsLoading(true);
-      let token = await SecureStore.getItemAsync('userToken');
-      let user = await SecureStore.getItemAsync('userInfo');
+      let token = await UniversalStorage.getItem('userToken');
+      let user = await UniversalStorage.getItem('userInfo');
       
       if (token && user) {
         setUserToken(token);
@@ -78,7 +87,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ login, register, logout, isLoading, userToken, userInfo }}>
+    <AuthContext.Provider value={{ login, register, logout, updateUserInfo, isLoading, userToken, userInfo }}>
       {children}
     </AuthContext.Provider>
   );
