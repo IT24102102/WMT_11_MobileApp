@@ -2,11 +2,14 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 const apiClient = axios.create({
-  baseURL: 'http://192.168.1.187:5000/api', // Replace with your local IP or backend URL
+  baseURL: 'https://odd-friends-lie.loca.lt/api', 
   headers: {
     'Content-Type': 'application/json',
+    'Bypass-Tunnel-Reminder': 'true', // Required for localtunnel to bypass the intro page
   },
 });
+
+
 
 // Add a request interceptor to include the JWT token
 apiClient.interceptors.request.use(

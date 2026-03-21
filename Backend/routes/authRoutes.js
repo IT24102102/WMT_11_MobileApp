@@ -17,12 +17,15 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @access  Public
 router.post("/register", async (req, res) => {
+  console.log("Registration request received:", req.body);
   const { name, email, nic, phone, password, role, assignedAsc, specialization, serviceDistricts } = req.body;
 
   try {
     if (!name || !email || !nic || !password) {
+      console.log("Registration failed: Missing fields", { name, email, nic, password });
       return res.status(400).json({ message: "Please add all fields" });
     }
+
 
     // Check if user exists
     const userExists = await User.findOne({ email });

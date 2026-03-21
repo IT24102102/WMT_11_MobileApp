@@ -11,7 +11,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log("Attempting login for:", email);
       const response = await apiClient.post('/auth/login', { email, password });
+      console.log("Login successful:", response.data._id);
       const { token, ...user } = response.data;
       
       setUserToken(token);
@@ -21,13 +23,17 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (e) {
+      console.log("Login error details:", e.response?.data || e.message);
       return { success: false, error: e.response?.data?.message || 'Login failed' };
     }
   };
 
+
   const register = async (userData) => {
     try {
+      console.log("Sending registration request:", userData);
       const response = await apiClient.post('/auth/register', userData);
+      console.log("Registration response:", response.data);
       const { token, ...user } = response.data;
       
       setUserToken(token);
@@ -37,9 +43,11 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (e) {
+      console.log("Registration error details:", e.response?.data || e.message);
       return { success: false, error: e.response?.data?.message || 'Registration failed' };
     }
   };
+
 
   const logout = async () => {
     setUserToken(null);
