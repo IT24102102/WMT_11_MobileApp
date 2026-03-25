@@ -27,6 +27,11 @@ const RegisterScreen = ({ navigation }) => {
 
     if (!result.success) {
       Alert.alert('Registration Failed', result.error);
+    } else {
+      console.log('Registration success! Redirecting to Dashboard...');
+      setTimeout(() => {
+        navigation.navigate('Home');
+      }, 500);
     }
   };
 

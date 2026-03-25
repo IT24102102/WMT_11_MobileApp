@@ -12,11 +12,14 @@ import AdminDashboard from '../screens/AdminDashboard';
 import HomeScreen from '../screens/HomeScreen';
 import FeaturePlaceholderScreen from '../screens/FeaturePlaceholderScreen';
 import LeafDiagnosticScreen from '../screens/LeafDiagnosticScreen';
+import MachineryAdminDashboard from '../screens/admin/MachineryAdminDashboard';
 
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
   const { isLoading, userToken, userInfo } = useContext(AuthContext);
+
+  console.log('AppNavigator State:', { isLoading, userToken: !!userToken, userInfo: !!userInfo, role: userInfo?.role });
 
   if (isLoading) {
     return (
@@ -30,20 +33,22 @@ const AppNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Landing">
         {userToken == null ? (
-          // Auth screens
           <>
             <Stack.Screen name="Landing" component={LandingScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : (
-          // Main App screens
           <>
+            <Stack.Screen name="Landing" component={LandingScreen} />
             {userInfo?.role === 'ADMIN' ? (
               <Stack.Screen name="Home" component={AdminDashboard} />
+            ) : userInfo?.role === 'MACHINERY_OFFICER' || userInfo?.role === 'ASC_OFFICER' ? (
+              <Stack.Screen name="Home" component={MachineryAdminDashboard} />
             ) : (
               <Stack.Screen name="Home" component={FarmerDashboard} />
             )}
+            <Stack.Screen name="MachineryAdmin" component={MachineryAdminDashboard} />
             <Stack.Screen name="RegisterCrop" component={FeaturePlaceholderScreen} initialParams={{ title: 'Register Crop' }} />
             <Stack.Screen name="FinancialAid" component={FeaturePlaceholderScreen} initialParams={{ title: 'Financial Aid' }} />
             <Stack.Screen name="MachineryHub" component={FeaturePlaceholderScreen} initialParams={{ title: 'Machinery Hub' }} />
@@ -51,6 +56,8 @@ const AppNavigator = () => {
             <Stack.Screen name="SellHarvest" component={FeaturePlaceholderScreen} initialParams={{ title: 'Sell Harvest' }} />
             <Stack.Screen name="LeafDiagnostic" component={LeafDiagnosticScreen} />
             <Stack.Screen name="Profile" component={HomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         )}
       </Stack.Navigator>

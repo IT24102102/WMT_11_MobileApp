@@ -25,7 +25,10 @@ const LoginScreen = ({ navigation }) => {
       console.log('Login failed, showing alert...');
       Alert.alert('Login Failed', result.error);
     } else {
-      console.log('Login success! AppNavigator should now redirect.');
+      console.log('Login success! Redirecting to Dashboard...');
+      setTimeout(() => {
+        navigation.navigate('Home');
+      }, 100);
     }
   };
 

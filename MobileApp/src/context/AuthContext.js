@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateUserInfo = async (newUser) => {
     setUserInfo(newUser);
-    await SecureStore.setItemAsync('userInfo', JSON.stringify(newUser));
+    await UniversalStorage.setItem('userInfo', JSON.stringify(newUser));
   };
 
   const isLoggedIn = async () => {

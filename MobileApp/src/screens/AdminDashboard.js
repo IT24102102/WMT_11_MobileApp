@@ -47,6 +47,7 @@ const AdminDashboard = ({ navigation }) => {
     { id: 'ascs', title: 'Agrarian Centers', desc: 'Manage infrastructure and staff.', icon: '🏢', screen: 'RegisterCrop' }, // Placeholders
     { id: 'staff', title: 'Staff & Allocation', desc: 'Manage and reallocate staff.', icon: '👥', screen: 'RegisterCrop' },
     { id: 'products', title: 'Product Approval', desc: 'Review product listings.', icon: '📦', screen: 'RegisterCrop' },
+    { id: 'machinery', title: t('machineryAdmin.title'), desc: 'Manage regional machinery and service requests.', icon: '🚜', screen: 'MachineryAdmin' },
     { id: 'reports', title: t('dashboard.reports'), desc: 'View production reports.', icon: '📊', screen: 'RegisterCrop' },
   ];
 
