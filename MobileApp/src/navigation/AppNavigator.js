@@ -13,6 +13,7 @@ import HomeScreen from '../screens/HomeScreen';
 import FeaturePlaceholderScreen from '../screens/FeaturePlaceholderScreen';
 import LeafDiagnosticScreen from '../screens/LeafDiagnosticScreen';
 import MachineryAdminDashboard from '../screens/admin/MachineryAdminDashboard';
+import ProductAdminDashboard from '../screens/admin/ProductAdminDashboard';
 
 const Stack = createStackNavigator();
 
@@ -45,10 +46,13 @@ const AppNavigator = () => {
               <Stack.Screen name="Home" component={AdminDashboard} />
             ) : userInfo?.role === 'MACHINERY_OFFICER' || userInfo?.role === 'ASC_OFFICER' ? (
               <Stack.Screen name="Home" component={MachineryAdminDashboard} />
+            ) : userInfo?.role === 'PRODUCT_MANAGER' ? (
+              <Stack.Screen name="Home" component={ProductAdminDashboard} />
             ) : (
               <Stack.Screen name="Home" component={FarmerDashboard} />
             )}
             <Stack.Screen name="MachineryAdmin" component={MachineryAdminDashboard} />
+            <Stack.Screen name="ProductAdmin" component={ProductAdminDashboard} />
             <Stack.Screen name="RegisterCrop" component={FeaturePlaceholderScreen} initialParams={{ title: 'Register Crop' }} />
             <Stack.Screen name="FinancialAid" component={FeaturePlaceholderScreen} initialParams={{ title: 'Financial Aid' }} />
             <Stack.Screen name="MachineryHub" component={FeaturePlaceholderScreen} initialParams={{ title: 'Machinery Hub' }} />
