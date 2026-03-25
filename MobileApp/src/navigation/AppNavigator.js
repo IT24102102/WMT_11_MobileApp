@@ -14,6 +14,7 @@ import FeaturePlaceholderScreen from '../screens/FeaturePlaceholderScreen';
 import LeafDiagnosticScreen from '../screens/LeafDiagnosticScreen';
 import MachineryAdminDashboard from '../screens/admin/MachineryAdminDashboard';
 import ProductAdminDashboard from '../screens/admin/ProductAdminDashboard';
+import ASCDashboard from '../screens/admin/ASCDashboard';
 
 const Stack = createStackNavigator();
 
@@ -44,7 +45,9 @@ const AppNavigator = () => {
             <Stack.Screen name="Landing" component={LandingScreen} />
             {userInfo?.role === 'ADMIN' ? (
               <Stack.Screen name="Home" component={AdminDashboard} />
-            ) : userInfo?.role === 'MACHINERY_OFFICER' || userInfo?.role === 'ASC_OFFICER' ? (
+            ) : userInfo?.role === 'ASC_OFFICER' ? (
+              <Stack.Screen name="Home" component={ASCDashboard} />
+            ) : userInfo?.role === 'MACHINERY_OFFICER' ? (
               <Stack.Screen name="Home" component={MachineryAdminDashboard} />
             ) : userInfo?.role === 'PRODUCT_MANAGER' ? (
               <Stack.Screen name="Home" component={ProductAdminDashboard} />
@@ -53,6 +56,7 @@ const AppNavigator = () => {
             )}
             <Stack.Screen name="MachineryAdmin" component={MachineryAdminDashboard} />
             <Stack.Screen name="ProductAdmin" component={ProductAdminDashboard} />
+            <Stack.Screen name="ASCDashboard" component={ASCDashboard} />
             <Stack.Screen name="RegisterCrop" component={FeaturePlaceholderScreen} initialParams={{ title: 'Register Crop' }} />
             <Stack.Screen name="FinancialAid" component={FeaturePlaceholderScreen} initialParams={{ title: 'Financial Aid' }} />
             <Stack.Screen name="MachineryHub" component={FeaturePlaceholderScreen} initialParams={{ title: 'Machinery Hub' }} />
