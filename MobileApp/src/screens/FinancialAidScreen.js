@@ -159,6 +159,14 @@ const FinancialAidScreen = ({ navigation }) => {
         {activeTab === 'LOAN' && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Apply for Cultivation Loan</Text>
+            
+            {userInfo?.assignedAsc && (
+              <View style={styles.assignedCenterBox}>
+                <Text style={styles.miniLabel}>Assigned Center (ASC)</Text>
+                <Text style={styles.centerName}>🏛️ {userInfo.assignedAsc.name}, {userInfo.assignedAsc.district}</Text>
+              </View>
+            )}
+
             <View style={styles.infoBox}>
               <Text style={styles.infoText}>Current Interest Rate: <Text style={styles.boldText}>{interestRate}% p.a.</Text></Text>
             </View>
@@ -344,6 +352,26 @@ const styles = StyleSheet.create({
   emiBox: { backgroundColor: '#f1f8e9', padding: 15, borderRadius: 12, marginBottom: 20, alignItems: 'center' },
   emiLabel: { fontSize: 12, color: '#558b2f', marginBottom: 5 },
   emiValue: { fontSize: 22, fontWeight: 'bold', color: '#2e7d32' },
+  assignedCenterBox: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  miniLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#999',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  centerName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#333',
+  },
   termsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
   termsText: { flex: 1, fontSize: 13, color: '#666', marginLeft: 10 },
   submitBtn: { backgroundColor: '#1b5e20', borderRadius: 12, padding: 16, alignItems: 'center' },

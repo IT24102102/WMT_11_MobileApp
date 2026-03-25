@@ -183,49 +183,77 @@ const RegisterCropScreen = ({ navigation }) => {
             renderDropdown(t('farmer_crop.season'), formData.season, seasons, (val) => handleInputChange('season', val))
           }
 
-          {/* District Selection */}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>{t('auth.district')} *</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipContainer}>
-              {districts.map(d => (
-                <TouchableOpacity 
-                  key={d} 
-                  style={[styles.chip, selectedDistrict === d && styles.activeChip]}
-                  onPress={() => {
-                    setSelectedDistrict(d);
-                    handleInputChange('location', d);
-                    handleInputChange('assignedAsc', '');
-                  }}
-                >
-                  <Text style={[styles.chipText, selectedDistrict === d && styles.activeChipText]}>{d}</Text>
+          {/* District & ASC Selection - Locked if already assigned */}
+          {userInfo?.assignedAsc ? (
+            <View style={styles.assignedAscBox}>
+              <Text style={styles.label}>{t('farmer_crop.selectAsc')}</Text>
+              <View style={styles.readOnlyBadge}>
+                <Text style={styles.readOnlyText}>
+                  📍 {userInfo.assignedAsc.name}, {userInfo.assignedAsc.district}
+                </Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+                  <Text style={styles.changeLink}>{t('farmer.change')}</Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* ASC Selection */}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>{t('farmer_crop.selectAsc')} *</Text>
-            {fetchingAscs ? (
-              <ActivityIndicator size="small" color="#2e7d32" />
-            ) : (
-              <View style={styles.ascList}>
-                {ascs.filter(a => a.district === selectedDistrict).map(a => (
-                  <TouchableOpacity 
-                    key={a._id} 
-                    style={[styles.ascItem, formData.assignedAsc === a._id && styles.activeAscItem]}
-                    onPress={() => handleInputChange('assignedAsc', a._id)}
-                  >
-                    <Text style={[styles.ascItemText, formData.assignedAsc === a._id && styles.activeAscItemText]}>{a.name}</Text>
-                  </TouchableOpacity>
-                ))}
-                {ascs.filter(a => a.district === selectedDistrict).length === 0 && (
-                  <Text style={styles.infoText}>{t('farmer_crop.selectDistrictFirst')}</Text>
-                )}
               </View>
-            )}
-            <Text style={styles.supportNote}>{t('farmer_crop.supportNote')}</Text>
-          </View>
+              <Text style={styles.supportNote}>{t('farmer_crop.supportNote')}</Text>
+            </View>
+          ) : (
+            <>
+              {/* District Selection */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>{t('auth.district')} *</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipContainer}>
+                  {districts.map(d => (
+                    <TouchableOpacity 
+                      key={d} 
+                      style={[styles.chip, selectedDistrict === d && styles.activeChip]}
+                      onPress={() => {
+                        setSelectedDistrict(d);
+                        handleInputChange('location', d);
+                        handleInputChange('assignedAsc', '');
+                      }}
+                    >
+                      <Text style={[styles.chipText, selectedDistrict === d && styles.activeChipText]}>{d}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* ASC Selection */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>{t('farmer_crop.selectAsc')} *</Text>
+                {fetchingAscs ? (
+                  <ActivityIndicator size="small" color="#2e7d32" />
+                ) : (
+                  <View style={styles.ascListContainer}>
+                    {selectedDistrict ? (
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChipsContent}>
+                        {ascs.filter(a => a.district === selectedDistrict).map(a => (
+                          <TouchableOpacity 
+                            key={a._id} 
+                            style={[styles.chip, formData.assignedAsc === a._id && styles.activeChip]}
+                            onPress={() => handleInputChange('assignedAsc', a._id)}
+                          >
+                            <Text style={[styles.chipText, formData.assignedAsc === a._id && styles.activeChipText]}>
+                              {formData.assignedAsc === a._id ? '✅ ' : '📍 '}{a.name}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                        {ascs.filter(a => a.district === selectedDistrict).length === 0 && (
+                          <Text style={styles.infoText}>No centers found</Text>
+                        )}
+                      </ScrollView>
+                    ) : (
+                      <View style={styles.emptyAscBox}>
+                        <Text style={styles.infoText}>{t('farmer_crop.selectDistrictFirst')}</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+                <Text style={styles.supportNote}>{t('farmer_crop.supportNote')}</Text>
+              </View>
+            </>
+          )}
 
           <TouchableOpacity 
             style={[styles.submitBtn, loading && styles.disabledBtn]} 
@@ -302,19 +330,43 @@ const styles = StyleSheet.create({
   activeChip: { backgroundColor: '#2e7d32', borderColor: '#2e7d32' },
   chipText: { fontSize: 13, color: '#666' },
   activeChipText: { color: '#fff', fontWeight: 'bold' },
-  ascList: { marginTop: 5 },
-  ascItem: {
+  ascListContainer: {
+    height: 50,
+    marginTop: 5,
+    justifyContent: 'center',
+  },
+  horizontalChipsContent: {
+    paddingHorizontal: 2,
+    alignItems: 'center',
+  },
+  assignedAscBox: {
+    marginBottom: 20,
+    backgroundColor: '#f1f8e9',
+    padding: 15,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#c8e6c9',
+  },
+  readOnlyBadge: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
     padding: 12,
     borderRadius: 10,
-    backgroundColor: '#f9f9f9',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#eee',
+    marginTop: 5,
   },
-  activeAscItem: { backgroundColor: '#e8f5e9', borderColor: '#4caf50' },
-  ascItemText: { fontSize: 14, color: '#333' },
-  activeAscItemText: { color: '#2e7d32', fontWeight: 'bold' },
-  infoText: { fontSize: 12, color: '#999', fontStyle: 'italic' },
+  readOnlyText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1b5e20',
+  },
+  changeLink: {
+    fontSize: 12,
+    color: '#2196f3',
+    fontWeight: 'bold',
+  },
+  infoText: { fontSize: 13, color: '#999', fontStyle: 'italic' },
   supportNote: { fontSize: 11, color: '#888', marginTop: 5 },
   submitBtn: {
     backgroundColor: '#1b5e20',

@@ -168,6 +168,14 @@ const MachineryHubScreen = ({ navigation }) => {
         {activeTab === 'ASC_REQ' && (
           <View style={styles.card}>
             <Text style={styles.cardHeader}>Request from ASC</Text>
+            
+            {userInfo?.assignedAsc && (
+              <View style={styles.assignedCenterBox}>
+                <Text style={styles.miniLabel}>Requesting from assigned center</Text>
+                <Text style={styles.centerName}>🏛️ {userInfo.assignedAsc.name}, {userInfo.assignedAsc.district}</Text>
+              </View>
+            )}
+
             <Text style={styles.cardSubtitle}>Rent machinery available at your assigned center.</Text>
             
             <View style={styles.formGroup}>
@@ -403,6 +411,27 @@ const styles = StyleSheet.create({
   activeChip: { backgroundColor: '#2e7d32' },
   chipText: { fontSize: 13, color: '#666' },
   activeChipText: { color: '#fff', fontWeight: 'bold' },
+  activeChipText: { color: '#fff', fontWeight: 'bold' },
+  assignedCenterBox: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  miniLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#999',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  centerName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#333',
+  },
   infoText: { fontSize: 12, color: '#999', fontStyle: 'italic' },
   submitBtn: { backgroundColor: '#1b5e20', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10 },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },

@@ -129,17 +129,30 @@ const FarmerDashboard = ({ navigation }) => {
                 ))}
               </ScrollView>
 
-              <Text style={styles.selectLabel}>{t('auth.asc')}</Text>
-              <View style={styles.ascList}>
-                {ascs.filter(a => a.district === selectedDistrict).map(a => (
-                  <TouchableOpacity 
-                    key={a._id} 
-                    style={[styles.ascItem, selectedAsc === a._id && styles.activeAscItem]}
-                    onPress={() => setSelectedAsc(a._id)}
-                  >
-                    <Text style={[styles.ascItemText, selectedAsc === a._id && styles.activeAscItemText]}>{a.name}</Text>
-                  </TouchableOpacity>
-                ))}
+              <Text style={styles.selectLabel}>{selectedDistrict ? `${t('auth.asc')} in ${selectedDistrict}` : t('auth.asc')}</Text>
+              <View style={styles.horizontalScrollWrapper}>
+                {selectedDistrict ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChipsContent}>
+                    {ascs.filter(a => a.district === selectedDistrict).map(a => (
+                      <TouchableOpacity 
+                        key={a._id} 
+                        style={[styles.chip, selectedAsc === a._id && styles.activeChip]}
+                        onPress={() => setSelectedAsc(a._id)}
+                      >
+                        <Text style={[styles.chipText, selectedAsc === a._id && styles.activeChipText]}>
+                          {selectedAsc === a._id ? '✅ ' : '📍 '}{a.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                    {ascs.filter(a => a.district === selectedDistrict).length === 0 && (
+                      <Text style={styles.emptyText}>No centers found</Text>
+                    )}
+                  </ScrollView>
+                ) : (
+                  <View style={styles.emptySelection}>
+                    <Text style={styles.emptySelectionText}>Please select a district first</Text>
+                  </View>
+                )}
               </View>
 
               <View style={styles.modalButtons}>
@@ -362,18 +375,28 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 10,
   },
+  horizontalScrollWrapper: {
+    marginBottom: 25,
+    height: 50,
+  },
+  horizontalChipsContent: {
+    paddingHorizontal: 2,
+    alignItems: 'center',
+  },
   chipContainer: {
     flexDirection: 'row',
     marginBottom: 15,
   },
   chip: {
     paddingHorizontal: 15,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f5f5f5',
     marginRight: 10,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#eee',
+    height: 40,
+    justifyContent: 'center',
   },
   activeChip: {
     backgroundColor: '#1b5e20',
@@ -387,28 +410,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  ascList: {
-    marginBottom: 20,
+  emptySelection: {
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  ascItem: {
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: '#f9f9f9',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#eee',
+  emptySelectionText: {
+    color: '#999',
+    fontSize: 13,
+    fontStyle: 'italic',
   },
-  activeAscItem: {
-    backgroundColor: '#e8f5e9',
-    borderColor: '#4caf50',
-  },
-  ascItemText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  activeAscItemText: {
-    color: '#2e7d32',
-    fontWeight: 'bold',
+  emptyText: {
+    color: '#999',
+    fontSize: 13,
+    marginLeft: 10,
   },
   input: {
     backgroundColor: '#f9f9f9',
