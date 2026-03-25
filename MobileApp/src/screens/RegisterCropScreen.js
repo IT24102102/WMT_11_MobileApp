@@ -1,0 +1,330 @@
+import React, { useState, useEffect, useContext } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
+  SafeAreaView, 
+  StatusBar, 
+  TextInput, 
+  ActivityIndicator,
+  Alert
+} from 'react-native';
+import { AuthContext } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import apiClient from '../api/apiClient';
+
+const RegisterCropScreen = ({ navigation }) => {
+  const { userInfo } = useContext(AuthContext);
+  const { t } = useLanguage();
+
+  const [formData, setFormData] = useState({
+    cropType: '',
+    variety: '',
+    landSize: '',
+    soilType: '',
+    season: '',
+    location: userInfo?.assignedAsc?.district || '',
+    assignedAsc: userInfo?.assignedAsc?._id || userInfo?.assignedAsc || ''
+  });
+
+  const [ascs, setAscs] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [selectedDistrict, setSelectedDistrict] = useState(userInfo?.assignedAsc?.district || '');
+  const [loading, setLoading] = useState(false);
+  const [fetchingAscs, setFetchingAscs] = useState(false);
+
+  useEffect(() => {
+    const fetchAscs = async () => {
+      setFetchingAscs(true);
+      try {
+        const response = await apiClient.get('/ascs');
+        setAscs(response.data);
+        const uniqueDistricts = [...new Set(response.data.map(asc => asc.district))].sort();
+        setDistricts(uniqueDistricts);
+      } catch (err) {
+        console.error('Error fetching ASCs:', err);
+      } finally {
+        setFetchingAscs(false);
+      }
+    };
+    fetchAscs();
+  }, []);
+
+  const handleInputChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async () => {
+    // Validation
+    const requiredFields = ['cropType', 'landSize', 'soilType', 'assignedAsc'];
+    if (formData.cropType === 'rice') requiredFields.push('season');
+    
+    for (const field of requiredFields) {
+      if (!formData[field]) {
+        Alert.alert('Error', `Please fill all required fields.`);
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiClient.post('/crops', formData);
+      if (response.status === 201) {
+        Alert.alert('Success', t('farmer_crop.successReg'));
+        navigation.navigate('Home'); // Back to dashboard
+      }
+    } catch (err) {
+      console.error('Error registering crop:', err);
+      Alert.alert('Error', err.response?.data?.message || 'Failed to register crop');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderDropdown = (label, value, options, onSelect, placeholder) => (
+    <View style={styles.formGroup}>
+      <Text style={styles.label}>{label} *</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipContainer}>
+        {options.map(opt => {
+          const optValue = typeof opt === 'object' ? opt.value : opt;
+          const optLabel = typeof opt === 'object' ? opt.label : opt;
+          const isActive = value === optValue;
+          return (
+            <TouchableOpacity 
+              key={optValue} 
+              style={[styles.chip, isActive && styles.activeChip]}
+              onPress={() => onSelect(optValue)}
+            >
+              <Text style={[styles.chipText, isActive && styles.activeChipText]}>{optLabel}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+
+  const cropTypes = [
+    { label: t('farmer_crop.rice'), value: 'rice' },
+    { label: t('farmer_crop.vegetables'), value: 'vegetables' },
+    { label: t('farmer_crop.fruits'), value: 'fruits' },
+    { label: t('farmer_crop.spices'), value: 'spices' },
+    { label: t('farmer_crop.tea'), value: 'tea' },
+    { label: t('farmer_crop.coconut'), value: 'coconut' },
+    { label: t('farmer_crop.rubber'), value: 'rubber' },
+    { label: t('farmer_crop.coffee'), value: 'coffee' },
+  ];
+
+  const soilTypes = [
+    { label: t('farmer_crop.clay'), value: 'clay' },
+    { label: t('farmer_crop.sandy'), value: 'sandy' },
+    { label: t('farmer_crop.loamy'), value: 'loamy' },
+    { label: t('farmer_crop.silt'), value: 'silt' },
+    { label: t('farmer_crop.peat'), value: 'peat' },
+  ];
+
+  const seasons = [
+    { label: t('farmer_crop.yala'), value: 'Yala' },
+    { label: t('farmer_crop.maha'), value: 'Maha' },
+  ];
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backBtnText}>← {t('common.cancel')}</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('farmer_crop.title')}</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('MyCrops')} style={styles.viewBtn}>
+           <Text style={styles.viewBtnText}>📋</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.introBox}>
+          <Text style={styles.icon}>🌱</Text>
+          <Text style={styles.subtitle}>{t('farmer_crop.subtitle')}</Text>
+        </View>
+
+        <View style={styles.formCard}>
+          {/* Crop Type */}
+          {renderDropdown(t('farmer_crop.cropType'), formData.cropType, cropTypes, (val) => handleInputChange('cropType', val))}
+
+          {/* Variety */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>{t('farmer_crop.variety')}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={t('farmer_crop.varietyPlaceholder')}
+              value={formData.variety}
+              onChangeText={(val) => handleInputChange('variety', val)}
+            />
+          </View>
+
+          {/* Land Size */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>{t('farmer_crop.landSize')} *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 2.5"
+              keyboardType="numeric"
+              value={formData.landSize}
+              onChangeText={(val) => handleInputChange('landSize', val)}
+            />
+          </View>
+
+          {/* Soil Type */}
+          {renderDropdown(t('farmer_crop.soilType'), formData.soilType, soilTypes, (val) => handleInputChange('soilType', val))}
+
+          {/* Season (If Rice) */}
+          {formData.cropType === 'rice' && 
+            renderDropdown(t('farmer_crop.season'), formData.season, seasons, (val) => handleInputChange('season', val))
+          }
+
+          {/* District Selection */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>{t('auth.district')} *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipContainer}>
+              {districts.map(d => (
+                <TouchableOpacity 
+                  key={d} 
+                  style={[styles.chip, selectedDistrict === d && styles.activeChip]}
+                  onPress={() => {
+                    setSelectedDistrict(d);
+                    handleInputChange('location', d);
+                    handleInputChange('assignedAsc', '');
+                  }}
+                >
+                  <Text style={[styles.chipText, selectedDistrict === d && styles.activeChipText]}>{d}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* ASC Selection */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>{t('farmer_crop.selectAsc')} *</Text>
+            {fetchingAscs ? (
+              <ActivityIndicator size="small" color="#2e7d32" />
+            ) : (
+              <View style={styles.ascList}>
+                {ascs.filter(a => a.district === selectedDistrict).map(a => (
+                  <TouchableOpacity 
+                    key={a._id} 
+                    style={[styles.ascItem, formData.assignedAsc === a._id && styles.activeAscItem]}
+                    onPress={() => handleInputChange('assignedAsc', a._id)}
+                  >
+                    <Text style={[styles.ascItemText, formData.assignedAsc === a._id && styles.activeAscItemText]}>{a.name}</Text>
+                  </TouchableOpacity>
+                ))}
+                {ascs.filter(a => a.district === selectedDistrict).length === 0 && (
+                  <Text style={styles.infoText}>{t('farmer_crop.selectDistrictFirst')}</Text>
+                )}
+              </View>
+            )}
+            <Text style={styles.supportNote}>{t('farmer_crop.supportNote')}</Text>
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.submitBtn, loading && styles.disabledBtn]} 
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitBtnText}>{t('common.save')}</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  backBtn: { padding: 5 },
+  backBtnText: { color: '#666', fontSize: 14, fontWeight: '600' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#1b5e20' },
+  viewBtn: { padding: 5 },
+  viewBtnText: { fontSize: 20 },
+  scrollContent: { padding: 20 },
+  introBox: { alignItems: 'center', marginBottom: 25 },
+  icon: { fontSize: 50, marginBottom: 10 },
+  subtitle: { fontSize: 14, color: '#666', textAlign: 'center', lineHeight: 20 },
+  formCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  formGroup: { marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 10 },
+  input: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#eee',
+    color: '#333',
+  },
+  chipContainer: { flexDirection: 'row', marginBottom: 5 },
+  chip: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  activeChip: { backgroundColor: '#2e7d32', borderColor: '#2e7d32' },
+  chipText: { fontSize: 13, color: '#666' },
+  activeChipText: { color: '#fff', fontWeight: 'bold' },
+  ascList: { marginTop: 5 },
+  ascItem: {
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#f9f9f9',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  activeAscItem: { backgroundColor: '#e8f5e9', borderColor: '#4caf50' },
+  ascItemText: { fontSize: 14, color: '#333' },
+  activeAscItemText: { color: '#2e7d32', fontWeight: 'bold' },
+  infoText: { fontSize: 12, color: '#999', fontStyle: 'italic' },
+  supportNote: { fontSize: 11, color: '#888', marginTop: 5 },
+  submitBtn: {
+    backgroundColor: '#1b5e20',
+    borderRadius: 12,
+    padding: 18,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  disabledBtn: { opacity: 0.6 },
+});
+
+export default RegisterCropScreen;

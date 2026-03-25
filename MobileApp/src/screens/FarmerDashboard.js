@@ -63,7 +63,8 @@ const FarmerDashboard = ({ navigation }) => {
   };
 
   const menuItems = [
-    { id: 'crop', title: t('farmer.registerCrop'), desc: t('farmer.registerCropDesc'), icon: '🌱', color: '#4caf50', screen: 'RegisterCrop' },
+    { id: 'crop', title: t('farmer_crop.title'), desc: t('farmer.registerCropDesc'), icon: '🌱', color: '#4caf50', screen: 'RegisterCrop' },
+    { id: 'mycrops', title: t('farmer_crop.headerList'), desc: t('farmer.yourCropsDesc'), icon: '🌾', color: '#81c784', screen: 'MyCrops' },
     { id: 'finance', title: t('farmer.financialAid'), desc: t('farmer.financialAidDesc'), icon: '💰', color: '#ff9800', screen: 'FinancialAid' },
     { id: 'machinery', title: t('farmer.machineryHub'), desc: t('farmer.machineryHubDesc'), icon: '🚜', color: '#2196f3', screen: 'MachineryHub' },
     { id: 'products', title: t('farmer.agriProducts'), desc: t('farmer.agriProductsDesc'), icon: '🛒', color: '#9c27b0', screen: 'AgriProducts' },

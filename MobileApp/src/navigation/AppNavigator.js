@@ -12,6 +12,12 @@ import AdminDashboard from '../screens/AdminDashboard';
 import HomeScreen from '../screens/HomeScreen';
 import FeaturePlaceholderScreen from '../screens/FeaturePlaceholderScreen';
 import LeafDiagnosticScreen from '../screens/LeafDiagnosticScreen';
+import RegisterCropScreen from '../screens/RegisterCropScreen';
+import MyCropsScreen from '../screens/MyCropsScreen';
+import MachineryHubScreen from '../screens/MachineryHubScreen';
+import FinancialAidScreen from '../screens/FinancialAidScreen';
+import AgriProductsScreen from '../screens/AgriProductsScreen';
+import SellHarvestScreen from '../screens/SellHarvestScreen';
 import MachineryAdminDashboard from '../screens/admin/MachineryAdminDashboard';
 import ProductAdminDashboard from '../screens/admin/ProductAdminDashboard';
 import ASCDashboard from '../screens/admin/ASCDashboard';
@@ -61,11 +67,12 @@ const AppNavigator = () => {
             <Stack.Screen name="ProductAdmin" component={ProductAdminDashboard} />
             <Stack.Screen name="ASCDashboard" component={ASCDashboard} />
             <Stack.Screen name="FinancialAdmin" component={FinancialAdminDashboard} />
-            <Stack.Screen name="RegisterCrop" component={FeaturePlaceholderScreen} initialParams={{ title: 'Register Crop' }} />
-            <Stack.Screen name="FinancialAid" component={FeaturePlaceholderScreen} initialParams={{ title: 'Financial Aid' }} />
-            <Stack.Screen name="MachineryHub" component={FeaturePlaceholderScreen} initialParams={{ title: 'Machinery Hub' }} />
-            <Stack.Screen name="AgriProducts" component={FeaturePlaceholderScreen} initialParams={{ title: 'Agri Products' }} />
-            <Stack.Screen name="SellHarvest" component={FeaturePlaceholderScreen} initialParams={{ title: 'Sell Harvest' }} />
+            <Stack.Screen name="RegisterCrop" component={RegisterCropScreen} />
+            <Stack.Screen name="MyCrops" component={MyCropsScreen} />
+            <Stack.Screen name="MachineryHub" component={MachineryHubScreen} />
+            <Stack.Screen name="FinancialAid" component={FinancialAidScreen} />
+            <Stack.Screen name="AgriProducts" component={AgriProductsScreen} />
+            <Stack.Screen name="SellHarvest" component={SellHarvestScreen} />
             <Stack.Screen name="LeafDiagnostic" component={LeafDiagnosticScreen} />
             <Stack.Screen name="Profile" component={HomeScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
