@@ -44,11 +44,11 @@ const AdminDashboard = ({ navigation }) => {
   };
 
   const adminMenu = [
-    { id: 'ascs', title: 'Agrarian Centers', desc: 'Manage infrastructure and staff.', icon: '🏢', screen: 'RegisterCrop' }, // Placeholders
-    { id: 'staff', title: 'Staff & Allocation', desc: 'Manage and reallocate staff.', icon: '👥', screen: 'RegisterCrop' },
-    { id: 'products', title: 'Product Approval', desc: 'Review product listings.', icon: '📦', screen: 'RegisterCrop' },
+    { id: 'ascs', title: 'Agrarian Centers', desc: 'Manage infrastructure and staff.', icon: '🏢', screen: 'ManageASC' },
+    { id: 'staff', title: 'Staff & Allocation', desc: 'Manage and reallocate staff.', icon: '👥', screen: 'ManageOfficers' },
+    { id: 'products', title: 'Product Approval', desc: 'Review product listings.', icon: '📦', screen: 'ProductReview' },
     { id: 'machinery', title: t('machineryAdmin.title'), desc: 'Manage regional machinery and service requests.', icon: '🚜', screen: 'MachineryAdmin' },
-    { id: 'reports', title: t('dashboard.reports'), desc: 'View production reports.', icon: '📊', screen: 'RegisterCrop' },
+    { id: 'reports', title: 'Analytics & Reports', desc: 'View system-wide production reports.', icon: '📊', screen: 'RegionalReports' }, 
   ];
 
   return (

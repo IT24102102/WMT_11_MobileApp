@@ -1,386 +1,520 @@
-import React, { useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, ImageBackground } from 'react-native';
+import React, { useContext, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+  ImageBackground,
+  StatusBar,
+  Animated,
+  Platform,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguage } from '../context/LanguageContext';
 import { AuthContext } from '../context/AuthContext';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+
+const SERVICES = [
+  { titleKey: 'landing.serviceCrop',      image: require('../../assets/images/services/crop_reg.jpg') },
+  { titleKey: 'landing.serviceMachinery', image: require('../../assets/images/services/machinery.jpg') },
+  { titleKey: 'landing.serviceMarket',    image: require('../../assets/images/services/marketplace.png') },
+  { titleKey: 'landing.serviceFinance',   image: require('../../assets/images/services/finance.png') },
+  { titleKey: 'landing.serviceConsult',   image: require('../../assets/images/services/expert.png') },
+];
+
+const STATS = [
+  { number: '1,200+', labelKey: 'landing.statFarmers' },
+  { number: '25+',    labelKey: 'landing.statDistricts' },
+  { number: '500+',   labelKey: 'landing.statMachinery' },
+  { number: '10k+',   labelKey: 'landing.statHarvests' },
+];
 
 const LandingScreen = ({ navigation }) => {
   const { t } = useLanguage();
   const { userToken } = useContext(AuthContext);
 
-  const services = [
-    { title: t('landing.serviceCrop'), image: require('../../assets/images/services/crop_reg.jpg') },
-    { title: t('landing.serviceMachinery'), image: require('../../assets/images/services/machinery.jpg') },
-    { title: t('landing.serviceMarket'), image: require('../../assets/images/services/marketplace.png') },
-    { title: t('landing.serviceFinance'), image: require('../../assets/images/services/finance.png') },
-    { title: t('landing.serviceConsult'), image: require('../../assets/images/services/expert.png') },
-  ];
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(24)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+    ]).start();
+  }, []);
 
   return (
-    <ScrollView 
-      style={styles.container} 
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Hero Section */}
-      <ImageBackground 
-        source={require('../../assets/images/hero.png')} 
-        style={styles.heroSection}
+    <View style={styles.root}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={Platform.OS !== 'web'}
       >
-        <LinearGradient
-          colors={['rgba(27, 94, 32, 0.85)', 'rgba(46, 125, 50, 0.45)']}
-          style={styles.heroGradient}
+
+        {/* ── HERO ──────────────────────────────────────────────────────── */}
+        <ImageBackground
+          source={require('../../assets/images/hero.png')}
+          style={styles.hero}
+          resizeMode="cover"
         >
-          <View style={styles.heroContent}>
-            <Text style={styles.heroTitle}>{t('landing.heroTitle')}</Text>
-            <Text style={styles.heroSubtitle}>{t('landing.heroSubtitle')}</Text>
-            <View style={styles.heroButtons}>
-              {userToken ? (
-                <TouchableOpacity 
-                  style={styles.primaryButton}
-                  onPress={() => navigation.navigate('Home')}
-                >
-                  <Text style={styles.primaryButtonText}>{t('landing.goToDashboard')}</Text>
-                </TouchableOpacity>
-              ) : (
-                <>
-                  <TouchableOpacity 
-                    style={styles.primaryButton}
-                    onPress={() => navigation.navigate('Register')}
-                  >
-                    <Text style={styles.primaryButtonText}>{t('landing.getStarted')}</Text>
+          <LinearGradient
+            colors={['rgba(27,94,32,0.90)', 'rgba(46,125,50,0.55)', 'rgba(0,0,0,0.15)']}
+            style={styles.heroGradient}
+          >
+            <Animated.View
+              style={[
+                styles.heroContent,
+                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+              ]}
+            >
+              <Text style={styles.heroTitle}>{t('landing.heroTitle')}</Text>
+              <Text style={styles.heroSubtitle}>{t('landing.heroSubtitle')}</Text>
+
+              <View style={styles.heroBtns}>
+                {userToken ? (
+                  <TouchableOpacity style={styles.btnPrimary} onPress={() => navigation.navigate('Home')}>
+                    <Text style={styles.btnPrimaryText}>{t('landing.goToDashboard')}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.secondaryButton}
-                    onPress={() => navigation.navigate('Login')}
-                  >
-                    <Text style={styles.secondaryButtonText}>{t('navbar.login')}</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          </View>
-        </LinearGradient>
-      </ImageBackground>
-
-      {/* Stats Section */}
-      <View style={styles.statsBar}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>1,200+</Text>
-          <Text style={styles.statLabel}>{t('landing.statFarmers')}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>25+</Text>
-          <Text style={styles.statLabel}>{t('landing.statDistricts')}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>500+</Text>
-          <Text style={styles.statLabel}>{t('landing.statMachinery')}</Text>
-        </View>
-      </View>
-
-      {/* Mission Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionTitleContainer}>
-          <Text style={styles.sectionTitle}>{t('landing.missionTitle')}</Text>
-          <Text style={styles.sectionSubtitle}>{t('landing.missionSubtitle')}</Text>
-        </View>
-      </View>
-
-      {/* Services Showcase */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { textAlign: 'center', marginBottom: 20 }]}>{t('landing.servicesTitle')}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselContainer}>
-          {services.map((service, index) => (
-            <View key={index} style={styles.serviceItem}>
-              <View style={styles.serviceImgContainer}>
-                <Image source={service.image} style={styles.serviceImg} />
+                ) : (
+                  <>
+                    <TouchableOpacity style={styles.btnPrimary} onPress={() => navigation.navigate('Register')}>
+                      <Text style={styles.btnPrimaryText}>{t('landing.getStarted')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.navigate('Login')}>
+                      <Text style={styles.btnOutlineText}>{t('navbar.login')}</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
-              <View style={styles.serviceItemContent}>
-                <Text style={styles.serviceItemTitle}>{service.title}</Text>
-              </View>
+            </Animated.View>
+          </LinearGradient>
+        </ImageBackground>
+
+        {/* ── STATS BAR ──────────────────────────────────────────────────── */}
+        <View style={styles.statsBar}>
+          {STATS.map((s) => (
+            <View key={s.labelKey} style={styles.statItem}>
+              <Text style={styles.statNumber}>{s.number}</Text>
+              <Text style={styles.statLabel}>{t(s.labelKey)}</Text>
             </View>
           ))}
-        </ScrollView>
-      </View>
+        </View>
 
-      {/* Testimonials */}
-      <View style={[styles.section, { backgroundColor: '#f9fafb' }]}>
-        <Text style={[styles.sectionTitle, { textAlign: 'center', marginBottom: 30 }]}>{t('landing.testimonialsTitle')}</Text>
-        <View style={styles.testimonialCard}>
-          <Text style={styles.quoteIcon}>"</Text>
-          <Text style={styles.testimonialText}>{t('landing.testimonial1')}</Text>
-          <View style={styles.authorInfo}>
-            <Text style={styles.authorName}>{t('landing.author1')}</Text>
-            <Text style={styles.authorRole}>{t('landing.role1')}</Text>
+        {/* ── MISSION ────────────────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, styles.center]}>{t('landing.missionTitle')}</Text>
+          <Text style={[styles.sectionSub, styles.center]}>{t('landing.missionSubtitle')}</Text>
+        </View>
+
+        {/* ── SERVICES ─────────────────────────────────────────────────────
+             Web:    flex-wrap grid (no nested scroll — avoids capturing wheel events)
+             Native: horizontal swipe carousel
+        ─────────────────────────────────────────────────────────────────── */}
+        <View style={styles.carouselSection}>
+          <Text style={[styles.sectionTitle, styles.center, { marginBottom: 18, paddingHorizontal: 16 }]}>
+            {t('landing.servicesTitle')}
+          </Text>
+
+          {Platform.OS === 'web' ? (
+            /* ── Web grid (no nested ScrollView) ── */
+            <View style={styles.servicesGrid}>
+              {SERVICES.map((svc, i) => (
+                <View key={i} style={styles.serviceCardWeb}>
+                  <Image source={svc.image} style={styles.serviceImg} />
+                  <View style={styles.serviceCardBottom}>
+                    <Text style={styles.serviceCardTitle}>{t(svc.titleKey)}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            /* ── Native swipe carousel ── */
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.carouselContent}
+            >
+              {SERVICES.map((svc, i) => (
+                <View
+                  key={i}
+                  style={[styles.serviceCard, i < SERVICES.length - 1 && { marginRight: 16 }]}
+                >
+                  <Image source={svc.image} style={styles.serviceImg} />
+                  <View style={styles.serviceCardBottom}>
+                    <Text style={styles.serviceCardTitle}>{t(svc.titleKey)}</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        {/* ── TESTIMONIALS ───────────────────────────────────────────────── */}
+        <View style={[styles.section, { backgroundColor: '#f9fafb' }]}>
+          <Text style={[styles.sectionTitle, styles.center, { marginBottom: 20 }]}>
+            {t('landing.testimonialsTitle')}
+          </Text>
+          {[
+            { text: 'landing.testimonial1', name: 'landing.author1', role: 'landing.role1' },
+            { text: 'landing.testimonial2', name: 'landing.author2', role: 'landing.role2' },
+          ].map((item, i) => (
+            <View key={i} style={styles.testimonialCard}>
+              <Text style={styles.quoteIcon}>"</Text>
+              <Text style={styles.testimonialText}>{t(item.text)}</Text>
+              <Text style={styles.authorName}>{t(item.name)}</Text>
+              <Text style={styles.authorRole}>{t(item.role)}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* ── ABOUT ─────────────────────────────────────────────────────── */}
+        <View style={[styles.section, { backgroundColor: '#fff', alignItems: 'center' }]}>
+          <Text style={[styles.sectionTitle, styles.center]}>{t('landing.aboutTitle')}</Text>
+          <Text style={[styles.sectionSub, styles.center, { marginTop: 8 }]}>
+            {t('landing.aboutDesc')}
+          </Text>
+        </View>
+
+        {/* ── FOOTER ─────────────────────────────────────────────────────── */}
+        <View style={styles.footer}>
+          <Text style={styles.footerBrand}>AgroLanka</Text>
+          <Text style={styles.footerTagline}>{t('landing.footerQuote')}</Text>
+
+          <View style={styles.socialRow}>
+            {['📱', '📘', '📸'].map((icon, i) => (
+              <View key={i} style={[styles.socialBtn, i < 2 && { marginRight: 12 }]}>
+                <Text style={{ fontSize: 18 }}>{icon}</Text>
+              </View>
+            ))}
           </View>
-        </View>
-        <View style={styles.testimonialCard}>
-          <Text style={styles.quoteIcon}>"</Text>
-          <Text style={styles.testimonialText}>{t('landing.testimonial2')}</Text>
-          <View style={styles.authorInfo}>
-            <Text style={styles.authorName}>{t('landing.author2')}</Text>
-            <Text style={styles.authorRole}>{t('landing.role2')}</Text>
+
+          <View style={styles.footerCols}>
+            <View style={styles.footerCol}>
+              <Text style={styles.footerColTitle}>{t('landing.quickLinks')}</Text>
+              {[
+                { label: t('navbar.login'),  screen: 'Login' },
+                { label: t('navbar.signup'), screen: 'Register' },
+              ].map((l) => (
+                <TouchableOpacity key={l.screen} onPress={() => navigation.navigate(l.screen)}>
+                  <Text style={styles.footerLink}>{l.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.footerCol}>
+              <Text style={styles.footerColTitle}>{t('navbar.contact')}</Text>
+              <Text style={styles.footerContactText}>📞 +94 11 234 5678</Text>
+              <Text style={styles.footerContactText}>📍 Colombo, Sri Lanka</Text>
+            </View>
           </View>
-        </View>
-      </View>
 
-      {/* About Section */}
-      <View style={styles.section}>
-        <View style={styles.aboutContent}>
-          <Text style={styles.aboutTitle}>{t('landing.aboutTitle')}</Text>
-          <Text style={styles.aboutDesc}>{t('landing.aboutDesc')}</Text>
+          <View style={styles.footerDivider} />
+          <Text style={styles.footerRights}>{t('landing.rights')}</Text>
         </View>
-      </View>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerBrand}>AgroLanka</Text>
-        <Text style={styles.footerQuote}>{t('landing.footerQuote')}</Text>
-        <View style={styles.socialLinks}>
-          <Text style={styles.socialIcon}>📱</Text>
-          <Text style={styles.socialIcon}>📘</Text>
-          <Text style={styles.socialIcon}>📸</Text>
-        </View>
-        <Text style={styles.footerRights}>{t('landing.rights')}</Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#fdfdfd',
+    // On web, the NavigationContainer already provides 100vh bounds.
+    // Adding an explicit height here would fight with it.
+  },
+  scroll: {
+    flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
+    flexGrow: 1, // ensures content area can grow and be fully scrollable
   },
-  heroSection: {
-    height: 450,
+
+  hero: {
+    width: '100%',
+    height: Platform.OS === 'web' ? '92vh' : height * 0.72,
   },
   heroGradient: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 25,
+    paddingHorizontal: 24,
+    paddingTop: 50,
   },
   heroContent: {
     alignItems: 'center',
+    maxWidth: 500,
   },
   heroTitle: {
-    fontSize: 32,
+    fontSize: Platform.OS === 'web' ? 48 : 32,
     fontWeight: '900',
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 15,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 10,
+    lineHeight: Platform.OS === 'web' ? 58 : 40,
+    marginBottom: 16,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 12,
   },
   heroSubtitle: {
-    fontSize: 16,
+    fontSize: Platform.OS === 'web' ? 18 : 15,
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 35,
-    opacity: 0.9,
-    lineHeight: 22,
+    opacity: 0.92,
+    lineHeight: 24,
+    marginBottom: 34,
+    maxWidth: 380,
   },
-  heroButtons: {
+  heroBtns: {
     flexDirection: 'row',
-    gap: 15,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
-  primaryButton: {
+  btnPrimary: {
     backgroundColor: '#2e7d32',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    minWidth: 140,
-    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 26,
+    borderRadius: 30,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    marginRight: 12,
+    marginBottom: 8,
   },
-  primaryButtonText: {
+  btnPrimaryText: {
     color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
+    fontWeight: '700',
+    fontSize: 15,
   },
-  secondaryButton: {
-    borderWidth: 1,
+  btnOutline: {
+    borderWidth: 2,
     borderColor: '#fff',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    minWidth: 140,
-    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 26,
+    borderRadius: 30,
+    marginBottom: 8,
   },
-  secondaryButtonText: {
+  btnOutlineText: {
     color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
+    fontWeight: '700',
+    fontSize: 15,
   },
+
   statsBar: {
     flexDirection: 'row',
     backgroundColor: '#1b5e20',
-    paddingVertical: 30,
+    paddingVertical: 28,
+    paddingHorizontal: 8,
     justifyContent: 'space-around',
-    marginHorizontal: 15,
-    marginTop: -40,
-    borderRadius: 20,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+    flexWrap: 'wrap',
   },
   statItem: {
     alignItems: 'center',
+    minWidth: 70,
+    paddingVertical: 4,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '900',
     color: '#fff',
   },
   statLabel: {
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.72)',
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: 5,
+    letterSpacing: 0.8,
+    marginTop: 3,
+    textAlign: 'center',
   },
+
   section: {
-    padding: 30,
-  },
-  sectionTitleContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+    backgroundColor: '#fdfdfd',
   },
   sectionTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
     color: '#1b5e20',
     marginBottom: 10,
   },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#666',
+  sectionSub: {
+    fontSize: 15,
+    color: '#6b7280',
+    lineHeight: 24,
+  },
+  center: {
     textAlign: 'center',
-    lineHeight: 20,
   },
-  carouselContainer: {
-    paddingVertical: 10,
+
+  carouselSection: {
+    paddingVertical: 36,
+    backgroundColor: '#f9fafb',
   },
-  serviceItem: {
-    width: 200,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    marginRight: 20,
+  carouselContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  // Native card (used in horizontal scroll)
+  serviceCard: {
+    width: 185,
+    borderRadius: 18,
     overflow: 'hidden',
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: 'rgba(46,125,50,0.12)',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },
-  serviceImgContainer: {
-    width: '100%',
-    height: 120,
+  // Web grid
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  serviceCardWeb: {
+    width: 185,
+    borderRadius: 18,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(46,125,50,0.12)',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    margin: 10,
   },
   serviceImg: {
     width: '100%',
-    height: '100%',
+    height: 130,
     resizeMode: 'cover',
   },
-  serviceItemContent: {
-    padding: 15,
+  serviceCardBottom: {
+    padding: 14,
     alignItems: 'center',
   },
-  serviceItemTitle: {
-    fontSize: 14,
+  serviceCardTitle: {
+    fontSize: 13,
     fontWeight: '700',
     color: '#1b5e20',
+    textAlign: 'center',
   },
+
   testimonialCard: {
     backgroundColor: '#fff',
-    padding: 25,
-    borderRadius: 20,
-    marginBottom: 20,
+    borderRadius: 18,
+    padding: 22,
+    marginBottom: 16,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 5,
+    shadowRadius: 6,
   },
   quoteIcon: {
-    fontSize: 40,
+    fontSize: 44,
     color: '#2e7d32',
-    opacity: 0.2,
-    marginTop: -10,
-    marginBottom: -10,
+    opacity: 0.22,
+    lineHeight: 38,
+    marginBottom: -4,
   },
   testimonialText: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#4b5563',
     fontStyle: 'italic',
     lineHeight: 22,
-    marginBottom: 15,
-  },
-  authorInfo: {
-    flexDirection: 'column',
+    marginBottom: 12,
   },
   authorName: {
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#111827',
+    fontSize: 14,
   },
   authorRole: {
     fontSize: 12,
     color: '#6b7280',
+    marginTop: 2,
   },
-  aboutContent: {
-    alignItems: 'center',
-  },
-  aboutTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1b5e20',
-    marginBottom: 15,
-  },
-  aboutDesc: {
-    fontSize: 15,
-    color: '#4b5563',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
+
   footer: {
     backgroundColor: '#111827',
-    padding: 50,
-    alignItems: 'center',
+    paddingTop: 48,
+    paddingHorizontal: 24,
+    paddingBottom: 36,
   },
   footerBrand: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
     color: '#fff',
     marginBottom: 10,
   },
-  footerQuote: {
-    fontSize: 14,
+  footerTagline: {
+    fontSize: 13,
     color: '#9ca3af',
-    textAlign: 'center',
+    lineHeight: 20,
     marginBottom: 20,
   },
-  socialLinks: {
+  socialRow: {
     flexDirection: 'row',
-    gap: 20,
-    marginBottom: 30,
+    marginBottom: 32,
   },
-  socialIcon: {
-    fontSize: 24,
+  socialBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#374151',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerCols: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 32,
+  },
+  footerCol: {
+    flex: 1,
+    marginRight: 16,
+  },
+  footerColTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 14,
+  },
+  footerLink: {
+    fontSize: 13,
+    color: '#9ca3af',
+    marginBottom: 10,
+  },
+  footerContactText: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginBottom: 8,
+  },
+  footerDivider: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 18,
   },
   footerRights: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#4b5563',
+    textAlign: 'center',
   },
 });
 

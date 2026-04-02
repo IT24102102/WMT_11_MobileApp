@@ -37,9 +37,18 @@ const LoginScreen = ({ navigation }) => {
       <View style={styles.card}>
         <Text style={styles.title}>AgroLanka</Text>
         <Text style={styles.subtitle}>Welcome back! Please login.</Text>
-        <Text style={{ fontSize: 10, color: 'blue', textAlign: 'center', marginBottom: 10 }}>
-          Debug: Connecting to http://localhost:5000/api
+        <Text style={{ fontSize: 10, color: 'blue', textAlign: 'center', marginBottom: 5 }}>
+          Debug IP: http://192.168.1.6:5000/api
         </Text>
+        
+        <TouchableOpacity 
+          style={{ marginBottom: 20, padding: 5, backgroundColor: '#eee', borderRadius: 5 }} 
+          onPress={() => navigation.navigate('ASCDashboard')}
+        >
+          <Text style={{ fontSize: 10, color: '#666', textAlign: 'center' }}>
+            [DEV ONLY] Tap to Check Admin Dashboard
+          </Text>
+        </TouchableOpacity>
 
         <TextInput
           style={styles.input}

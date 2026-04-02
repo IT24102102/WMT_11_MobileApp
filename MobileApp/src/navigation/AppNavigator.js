@@ -22,6 +22,11 @@ import MachineryAdminDashboard from '../screens/admin/MachineryAdminDashboard';
 import ProductAdminDashboard from '../screens/admin/ProductAdminDashboard';
 import ASCDashboard from '../screens/admin/ASCDashboard';
 import FinancialAdminDashboard from '../screens/admin/FinancialAdminDashboard';
+import AdminProductReview from '../screens/admin/AdminProductReview';
+import ManageOfficers from '../screens/admin/ManageOfficers';
+import ManageASC from '../screens/admin/ManageASC';
+import CropDashboard from '../screens/admin/CropDashboard';
+import RegionalReports from '../screens/admin/RegionalReports';
 
 const Stack = createStackNavigator();
 
@@ -46,6 +51,17 @@ const AppNavigator = () => {
             <Stack.Screen name="Landing" component={LandingScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            {/* Test Bypass Screens */}
+            <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
+            <Stack.Screen name="ASCDashboard" component={ASCDashboard} />
+            <Stack.Screen name="MachineryAdmin" component={MachineryAdminDashboard} />
+            <Stack.Screen name="ProductAdmin" component={ProductAdminDashboard} />
+            <Stack.Screen name="FinancialAdmin" component={FinancialAdminDashboard} />
+            <Stack.Screen name="ProductReview" component={AdminProductReview} />
+            <Stack.Screen name="ManageASC" component={ManageASC} />
+            <Stack.Screen name="ManageOfficers" component={ManageOfficers} />
+            <Stack.Screen name="CropDashboard" component={CropDashboard} />
+            <Stack.Screen name="RegionalReports" component={RegionalReports} />
           </>
         ) : (
           <>
@@ -60,6 +76,8 @@ const AppNavigator = () => {
               <Stack.Screen name="Home" component={MachineryAdminDashboard} />
             ) : userInfo?.role === 'PRODUCT_MANAGER' ? (
               <Stack.Screen name="Home" component={ProductAdminDashboard} />
+            ) : userInfo?.role === 'CROP_OFFICER' ? (
+              <Stack.Screen name="Home" component={CropDashboard} />
             ) : (
               <Stack.Screen name="Home" component={FarmerDashboard} />
             )}
@@ -77,6 +95,12 @@ const AppNavigator = () => {
             <Stack.Screen name="Profile" component={HomeScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
+            <Stack.Screen name="ManageASC" component={ManageASC} />
+            <Stack.Screen name="ManageOfficers" component={ManageOfficers} />
+            <Stack.Screen name="ProductReview" component={AdminProductReview} />
+            <Stack.Screen name="CropDashboard" component={CropDashboard} />
+            <Stack.Screen name="RegionalReports" component={RegionalReports} />
           </>
         )}
       </Stack.Navigator>
