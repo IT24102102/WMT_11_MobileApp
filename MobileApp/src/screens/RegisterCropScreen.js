@@ -57,15 +57,31 @@ const RegisterCropScreen = ({ navigation }) => {
   };
 
   const handleSubmit = async () => {
-    // Validation
-    const requiredFields = ['cropType', 'landSize', 'soilType', 'assignedAsc'];
-    if (formData.cropType === 'rice') requiredFields.push('season');
+    // Basic Required Fields Validation
+    const requiredFields = [
+      { key: 'cropType', name: 'Crop Type' },
+      { key: 'variety', name: 'Variety' },
+      { key: 'landSize', name: 'Land Size' },
+      { key: 'soilType', name: 'Soil Type' },
+      { key: 'assignedAsc', name: 'ASC Center' }
+    ];
+
+    if (formData.cropType === 'rice') {
+      requiredFields.push({ key: 'season', name: 'Season' });
+    }
     
     for (const field of requiredFields) {
-      if (!formData[field]) {
-        Alert.alert('Error', `Please fill all required fields.`);
+      if (!formData[field.key] || formData[field.key].toString().trim() === '') {
+        Alert.alert('Required Field', `Please select or enter the ${field.name}.`);
         return;
       }
+    }
+
+    // Number Validation for Land Size
+    const size = parseFloat(formData.landSize);
+    if (isNaN(size) || size <= 0) {
+      Alert.alert('Invalid Input', 'Land size must be a positive number (greater than 0).');
+      return;
     }
 
     setLoading(true);
@@ -116,6 +132,19 @@ const RegisterCropScreen = ({ navigation }) => {
     { label: t('farmer_crop.coffee'), value: 'coffee' },
   ];
 
+  const riceVarieties = [
+    'Samba',
+    'Keeri Samba',
+    'Nadu',
+    'Kakulu (Red)',
+    'Kakulu (White)',
+    'Suwandel',
+    'Pachchaperumal',
+    'Kalu Heenati',
+    'Madathawalu',
+    'Other'
+  ];
+
   const soilTypes = [
     { label: t('farmer_crop.clay'), value: 'clay' },
     { label: t('farmer_crop.sandy'), value: 'sandy' },
@@ -150,18 +179,46 @@ const RegisterCropScreen = ({ navigation }) => {
 
         <View style={styles.formCard}>
           {/* Crop Type */}
-          {renderDropdown(t('farmer_crop.cropType'), formData.cropType, cropTypes, (val) => handleInputChange('cropType', val))}
+          {renderDropdown(t('farmer_crop.cropType'), formData.cropType, cropTypes, (val) => {
+            handleInputChange('cropType', val);
+            // Reset variety if crop type changes to something else
+            if(val !== 'rice') handleInputChange('variety', '');
+          })}
 
           {/* Variety */}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>{t('farmer_crop.variety')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t('farmer_crop.varietyPlaceholder')}
-              value={formData.variety}
-              onChangeText={(val) => handleInputChange('variety', val)}
-            />
-          </View>
+          {formData.cropType === 'rice' ? (
+            <>
+              {renderDropdown(
+                t('farmer_crop.variety'), 
+                riceVarieties.includes(formData.variety) ? formData.variety : 'Other', 
+                riceVarieties, 
+                (val) => handleInputChange('variety', val)
+              )}
+              
+              {/* Show manual input if 'Other' is selected or a custom variety is already set */}
+              {(formData.variety === 'Other' || (formData.variety && !riceVarieties.includes(formData.variety))) && (
+                <View style={styles.formGroup}>
+                   <TextInput
+                    style={styles.input}
+                    placeholder="Enter variety name (e.g. Red Samba)"
+                    value={riceVarieties.includes(formData.variety) ? '' : formData.variety}
+                    autoFocus={formData.variety === 'Other'}
+                    onChangeText={(val) => handleInputChange('variety', val)}
+                  />
+                </View>
+              )}
+            </>
+          ) : (
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>{t('farmer_crop.variety')}</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={t('farmer_crop.varietyPlaceholder')}
+                value={formData.variety}
+                onChangeText={(val) => handleInputChange('variety', val)}
+              />
+            </View>
+          )}
 
           {/* Land Size */}
           <View style={styles.formGroup}>

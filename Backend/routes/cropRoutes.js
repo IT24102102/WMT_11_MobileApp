@@ -24,6 +24,9 @@ router.post("/", protect, authorize("FARMER"), async (req, res) => {
             return res.status(400).json({ message: "Please provide all required fields" });
         }
 
+        if (isNaN(parseFloat(landSize)) || parseFloat(landSize) <= 0) {
+            return res.status(400).json({ message: "Land size must be a positive number" });
+        }
         const crop = await Crop.create({
             farmer: req.user._id,
             cropType,
