@@ -34,7 +34,7 @@ const STATS = [
 ];
 
 const LandingScreen = ({ navigation }) => {
-  const { t } = useLanguage();
+  const { t, language, switchLanguage } = useLanguage();
   const { userToken } = useContext(AuthContext);
 
   const fadeAnim  = useRef(new Animated.Value(0)).current;
@@ -67,6 +67,22 @@ const LandingScreen = ({ navigation }) => {
             colors={['rgba(27,94,32,0.90)', 'rgba(46,125,50,0.55)', 'rgba(0,0,0,0.15)']}
             style={styles.heroGradient}
           >
+            {/* ── Language Toggle ── */}
+            <View style={styles.langToggle}>
+              <TouchableOpacity
+                style={[styles.langBtn, language === 'en' && styles.langBtnActive]}
+                onPress={() => switchLanguage('en')}
+              >
+                <Text style={[styles.langBtnText, language === 'en' && styles.langBtnTextActive]}>En</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.langBtn, language === 'si' && styles.langBtnActive]}
+                onPress={() => switchLanguage('si')}
+              >
+                <Text style={[styles.langBtnText, language === 'si' && styles.langBtnTextActive]}>සිං</Text>
+              </TouchableOpacity>
+            </View>
+
             <Animated.View
               style={[
                 styles.heroContent,
@@ -246,6 +262,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 50,
+  },
+  langToggle: {
+    position: 'absolute',
+    top: Platform.OS === 'web' ? 18 : 52,
+    right: 18,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    overflow: 'hidden',
+  },
+  langBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  langBtnActive: {
+    backgroundColor: '#fff',
+  },
+  langBtnText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  langBtnTextActive: {
+    color: '#1b5e20',
   },
   heroContent: {
     alignItems: 'center',

@@ -58,6 +58,10 @@ const RegisterScreen = ({ navigation }) => {
     'Vegetables (එළවළු)', 
     'Fruits (පලතුරු)', 
     'Spices (කුළුබඩු)', 
+    'Tea (තේ)', 
+    'Coconut (පොල්)', 
+    'Rubber (රබර්)', 
+    'Coffee (කෝපි)', 
     'Export Crops (අපනයන බෝග)', 
     'Other'
   ];

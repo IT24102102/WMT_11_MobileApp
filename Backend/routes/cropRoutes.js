@@ -52,26 +52,30 @@ router.post("/", protect, authorize("FARMER"), async (req, res) => {
 router.get("/", protect, async (req, res) => {
     try {
         let query = {};
+        console.log(`[DEBUG] Fetching crops. User: ${req.user._id}, Role: ${req.user.role}`);
 
         if (req.user.role === "FARMER") {
             query.farmer = req.user._id;
+            console.log(`[DEBUG] Farmer query:`, query);
         } else if (req.user.role === "CROP_OFFICER" || req.user.role === "ASC_OFFICER") {
             // Filter by the officer's assigned ASC
             if (!req.user.assignedAsc) {
+                console.log(`[DEBUG] Officer missing ASC assignment.`);
                 return res.status(400).json({ message: "Officer not assigned to any ASC" });
             }
             query.assignedAsc = req.user.assignedAsc;
 
             // Further filter by specialization mappings
             const specializationMap = {
-                "Paddy": "rice",
-                "Vegetables": "vegetables",
-                "Fruits": "fruits",
-                "Spices": "spices",
-                "Tea": "tea",
-                "Coconut": "coconut",
-                "Rubber": "rubber",
-                "Coffee": "coffee",
+                "Paddy (වී)": "rice",
+                "Vegetables (එළවළු)": "vegetables",
+                "Fruits (පලතුරු)": "fruits",
+                "Spices (කුළුබඩු)": "spices",
+                "Tea (තේ)": "tea",
+                "Coconut (පොල්)": "coconut",
+                "Rubber (රබර්)": "rubber",
+                "Coffee (කෝපි)": "coffee",
+                "Export Crops (අපනයන බෝග)": "export",
                 "Other": "other"
             };
 

@@ -6,7 +6,7 @@ import apiClient from '../api/apiClient';
 
 const FarmerDashboard = ({ navigation }) => {
   const { userInfo, updateUserInfo, logout } = useContext(AuthContext);
-  const { t } = useLanguage();
+  const { t, language, switchLanguage } = useLanguage();
 
   const [ascs, setAscs] = React.useState([]);
   const [districts, setDistricts] = React.useState([]);
@@ -79,21 +79,38 @@ const FarmerDashboard = ({ navigation }) => {
         
         {/* Header Section */}
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerLeft}>
             <Text style={styles.welcomeText}>{t('dashboard.welcome')},</Text>
-            <Text style={styles.userName}>{userInfo?.name || 'Farmer'}! 🌾</Text>
-            <Text style={styles.subtitle}>{t('farmer.manageActivities')}</Text>
+            <Text style={styles.userName} numberOfLines={1}>{userInfo?.name || 'Farmer'}! 🌾</Text>
+            <Text style={styles.subtitle} numberOfLines={2}>{t('farmer.manageActivities')}</Text>
           </View>
-          <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-            <Text style={styles.logoutText}>{t('dashboard.logout')}</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            {/* Language Toggle */}
+            <View style={styles.langToggle}>
+              <TouchableOpacity
+                style={[styles.langBtn, language === 'en' && styles.langBtnActive]}
+                onPress={() => switchLanguage('en')}
+              >
+                <Text style={[styles.langBtnText, language === 'en' && styles.langBtnTextActive]}>En</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.langBtn, language === 'si' && styles.langBtnActive]}
+                onPress={() => switchLanguage('si')}
+              >
+                <Text style={[styles.langBtnText, language === 'si' && styles.langBtnTextActive]}>සිං</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+              <Text style={styles.logoutText}>{t('dashboard.logout')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Profile Status Cards */}
         <View style={styles.statusRow}>
           <TouchableOpacity style={styles.statusCard} onPress={() => setIsEditingAsc(true)}>
             <View style={styles.cardHeader}>
-              <Text style={styles.statusLabel}>{t('farmer.yourCenter')}</Text>
+              <Text style={styles.statusLabel} numberOfLines={2}>{t('farmer.yourCenter')}</Text>
               <Text style={styles.editLink}>{t('farmer.change')}</Text>
             </View>
             <Text style={styles.statusValue}>📍 {userInfo?.assignedAsc?.name || t('farmer.noCenter')}</Text>
@@ -102,7 +119,7 @@ const FarmerDashboard = ({ navigation }) => {
 
           <TouchableOpacity style={styles.statusCard} onPress={() => setIsEditingPhone(true)}>
             <View style={styles.cardHeader}>
-              <Text style={styles.statusLabel}>{t('farmer.phoneNumber')}</Text>
+              <Text style={styles.statusLabel} numberOfLines={2}>{t('farmer.phoneNumber')}</Text>
               <Text style={styles.editLink}>{t('farmer.edit')}</Text>
             </View>
             <Text style={styles.statusValue}>📞 {userInfo?.phone || 'Not added'}</Text>
@@ -210,8 +227,8 @@ const FarmerDashboard = ({ navigation }) => {
               <View style={[styles.iconBox, { backgroundColor: item.color + '20' }]}>
                 <Text style={styles.icon}>{item.icon}</Text>
               </View>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-              <Text style={styles.cardDesc} numberOfLines={2}>{item.desc}</Text>
+              <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+              <Text style={styles.cardDesc} numberOfLines={3}>{item.desc}</Text>
             </TouchableOpacity>
           )) }
         </View>
@@ -236,19 +253,52 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     marginTop: 10,
   },
+  headerLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
   welcomeText: {
     fontSize: 16,
     color: '#666',
   },
   userName: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#1b5e20',
     marginVertical: 4,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#888',
+    lineHeight: 17,
+  },
+  headerActions: {
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  langToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    overflow: 'hidden',
+  },
+  langBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  langBtnActive: {
+    backgroundColor: '#1b5e20',
+  },
+  langBtnText: {
+    color: '#888',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  langBtnTextActive: {
+    color: '#fff',
   },
   logoutBtn: {
     paddingVertical: 8,
@@ -301,7 +351,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     width: '48%',
-    padding: 20,
+    minHeight: 170,
+    padding: 18,
     borderRadius: 20,
     marginBottom: 15,
     elevation: 3,
@@ -310,6 +361,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   iconBox: {
     width: 60,
@@ -323,11 +375,12 @@ const styles = StyleSheet.create({
     fontSize: 30,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+    lineHeight: 19,
   },
   cardDesc: {
     fontSize: 12,

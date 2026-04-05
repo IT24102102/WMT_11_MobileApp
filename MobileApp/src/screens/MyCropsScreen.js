@@ -42,9 +42,11 @@ const MyCropsScreen = ({ navigation }) => {
     
     try {
       const response = await apiClient.get('/crops');
+      console.log(`[DEBUG] Received ${response.data.length} crops for user from API.`);
+      console.log(`[DEBUG] Raw response data:`, JSON.stringify(response.data, null, 2).substring(0, 500));
       setCrops(response.data);
     } catch (err) {
-      console.error('Error fetching crops:', err);
+      console.error('[DEBUG] Error fetching crops:', err.response?.data || err.message);
     } finally {
       setLoading(false);
       setRefreshing(false);

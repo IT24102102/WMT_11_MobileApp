@@ -6,7 +6,7 @@ import apiClient from '../api/apiClient';
 
 const AdminDashboard = ({ navigation }) => {
   const { userInfo, logout } = useContext(AuthContext);
-  const { t } = useLanguage();
+  const { t, language, switchLanguage } = useLanguage();
   const [stats, setStats] = useState({ ascCount: 0, officerCount: 0 });
   const [selectedDistrict, setSelectedDistrict] = useState('Colombo');
 
@@ -62,9 +62,25 @@ const AdminDashboard = ({ navigation }) => {
             <Text style={styles.userName}>{userInfo?.name || 'Admin'} 🛡️</Text>
             <Text style={styles.subtitle}>AgroLanka System Overview</Text>
           </View>
-          <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-            <Text style={styles.logoutText}>{t('dashboard.logout')}</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <View style={styles.langToggle}>
+              <TouchableOpacity
+                style={[styles.langBtn, language === 'en' && styles.langBtnActive]}
+                onPress={() => switchLanguage('en')}
+              >
+                <Text style={[styles.langBtnText, language === 'en' && styles.langBtnTextActive]}>En</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.langBtn, language === 'si' && styles.langBtnActive]}
+                onPress={() => switchLanguage('si')}
+              >
+                <Text style={[styles.langBtnText, language === 'si' && styles.langBtnTextActive]}>සිං</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+              <Text style={styles.logoutText}>{t('dashboard.logout')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Stats Grid */}
@@ -133,6 +149,19 @@ const styles = StyleSheet.create({
   adminTag: { fontSize: 10, fontWeight: 'bold', color: '#1976d2', letterSpacing: 1 },
   userName: { fontSize: 24, fontWeight: 'bold', color: '#333', marginVertical: 4 },
   subtitle: { fontSize: 14, color: '#666' },
+  headerActions: { alignItems: 'flex-end', gap: 8 },
+  langToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    overflow: 'hidden',
+  },
+  langBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
+  langBtnActive: { backgroundColor: '#1b5e20' },
+  langBtnText: { color: '#888', fontWeight: '700', fontSize: 12 },
+  langBtnTextActive: { color: '#fff' },
   logoutBtn: { padding: 10, borderRadius: 10, backgroundColor: '#fff', elevation: 2 },
   logoutText: { color: '#d32f2f', fontWeight: 'bold' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
