@@ -56,18 +56,21 @@ router.post("/register", async (req, res) => {
       serviceDistricts: serviceDistricts || []
     });
 
-    if (user) {
+    // Fetch user and populate ASC info
+    const newUser = await User.findById(user._id).populate('assignedAsc', 'name district');
+
+    if (newUser) {
       res.status(201).json({
-        _id: user.id,
-        name: user.name,
-        email: user.email,
-        nic: user.nic,
-        phone: user.phone,
-        role: user.role,
-        assignedAsc: user.assignedAsc,
-        specialization: user.specialization,
-        serviceDistricts: user.serviceDistricts,
-        token: generateToken(user.id),
+        _id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        nic: newUser.nic,
+        phone: newUser.phone,
+        role: newUser.role,
+        assignedAsc: newUser.assignedAsc,
+        specialization: newUser.specialization,
+        serviceDistricts: newUser.serviceDistricts,
+        token: generateToken(newUser.id),
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
