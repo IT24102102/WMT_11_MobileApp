@@ -112,6 +112,7 @@ const MachineryHubScreen = ({ navigation }) => {
   const [registeredCrops, setRegisteredCrops] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarTarget, setCalendarTarget] = useState('machinery');
+  const [editingRentalId, setEditingRentalId] = useState(null);
 
   const getAssignedLocation = useCallback(() => {
     if (userInfo?.assignedAsc) {
@@ -225,15 +226,57 @@ const MachineryHubScreen = ({ navigation }) => {
     }
     setLoading(true);
     try {
-      await apiClient.post('/machinery/rent-out', rentalForm);
-      Alert.alert('Success', 'Machinery listed for rent successfully!');
+      if (editingRentalId) {
+        await apiClient.put(`/machinery/rent-out/${editingRentalId}`, rentalForm);
+        Alert.alert('Success', 'Machinery listing updated successfully!');
+      } else {
+        await apiClient.post('/machinery/rent-out', rentalForm);
+        Alert.alert('Success', 'Machinery listed for rent successfully!');
+      }
       setRentalForm({ ...rentalForm, machineryType: '', description: '', rentPerDay: '', image: null });
+      setEditingRentalId(null);
       fetchData();
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to list machinery');
+      Alert.alert('Error', err.response?.data?.message || 'Failed to process machinery listing');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteRental = (id) => {
+    Alert.alert(
+      'Delete Listing',
+      'Are you sure you want to remove this machinery listing?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await apiClient.delete(`/machinery/rent-out/${id}`);
+              fetchData();
+              Alert.alert('Success', 'Listing removed');
+            } catch (err) {
+              Alert.alert('Error', 'Failed to delete listing');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const loadRentalForEdit = (rental) => {
+    setRentalForm({
+      machineryType: rental.machineryType,
+      description: rental.description,
+      rentPerDay: rental.rentPerDay.toString(),
+      contactNumber: rental.contactNumber,
+      image: rental.image
+    });
+    setEditingRentalId(rental._id);
+    // Scroll to form or just let user know
+    Alert.alert('Edit Mode', 'Form populated with listing details. Scroll up to edit.');
   };
 
   const pickImage = async () => {
@@ -519,8 +562,20 @@ const MachineryHubScreen = ({ navigation }) => {
             </View>
 
             <TouchableOpacity style={styles.submitBtn} onPress={handleRentalSubmit} disabled={loading}>
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>List for Rent</Text>}
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>{editingRentalId ? 'Update Listing' : 'List for Rent'}</Text>}
             </TouchableOpacity>
+
+            {editingRentalId && (
+              <TouchableOpacity 
+                style={[styles.submitBtn, { backgroundColor: '#757575', marginTop: 10 }]} 
+                onPress={() => {
+                  setEditingRentalId(null);
+                  setRentalForm({ ...rentalForm, machineryType: '', description: '', rentPerDay: '', image: null });
+                }}
+              >
+                <Text style={styles.submitBtnText}>Cancel Edit</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -570,8 +625,18 @@ const MachineryHubScreen = ({ navigation }) => {
             ))}
             {activeTab === 'RENT_OUT' && history.myRentals.map(r => (
               <View key={r._id} style={styles.historyItem}>
-                <Text style={styles.historyName}>{r.machineryType}</Text>
-                <Text style={styles.historyStatus}>LKR {r.rentPerDay}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.historyName}>{r.machineryType}</Text>
+                  <Text style={styles.historyStatus}>LKR {r.rentPerDay}</Text>
+                </View>
+                <View style={{ flexDirection: 'row' }}>
+                  <TouchableOpacity style={styles.actionBtn} onPress={() => loadRentalForEdit(r)}>
+                    <Text style={styles.actionBtnText}>📝</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.actionBtn, { borderColor: '#ffebee' }]} onPress={() => handleDeleteRental(r._id)}>
+                    <Text style={styles.actionBtnText}>🗑️</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </View>
@@ -644,6 +709,8 @@ const styles = StyleSheet.create({
   infoText: { fontSize: 12, color: '#999', fontStyle: 'italic' },
   submitBtn: { backgroundColor: '#1b5e20', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10 },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  actionBtn: { padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', marginLeft: 8, backgroundColor: '#fff' },
+  actionBtnText: { fontSize: 16 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1b5e20', marginBottom: 15 },
   row: { flexDirection: 'row', alignItems: 'center' },
   miniBtn: { backgroundColor: '#e8f5e9', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, marginLeft: 8, borderWidth: 1, borderColor: '#c8e6c9' },

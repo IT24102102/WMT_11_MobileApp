@@ -1,127 +1,22 @@
 const express = require("express");
 const router = express.Router();
-const Crop = require("../models/Crop");
+const {
+    registerCrop,
+    getCrops,
+    updateCropStatus
+} = require("../Controllers/cropController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
 // @desc    Register a new crop
 // @route   POST /api/crops
-// @access  Private (Farmer only)
-router.post("/", protect, authorize("FARMER"), async (req, res) => {
-    try {
-        const {
-            cropType,
-            variety,
-            landSize,
-            plantingDate,
-            expectedHarvest,
-            location,
-            soilType,
-            assignedAsc,
-            season
-        } = req.body;
+router.post("/", protect, authorize("FARMER"), registerCrop);
 
-        if (!cropType || !variety || !landSize || !location || !soilType || !assignedAsc) {
-            return res.status(400).json({ message: "Please provide all required fields" });
-        }
-
-        if (isNaN(parseFloat(landSize)) || parseFloat(landSize) <= 0) {
-            return res.status(400).json({ message: "Land size must be a positive number" });
-        }
-        const crop = await Crop.create({
-            farmer: req.user._id,
-            cropType,
-            variety,
-            landSize,
-            plantingDate,
-            expectedHarvest,
-            location,
-            soilType,
-            assignedAsc,
-            season: season || "N/A"
-        });
-
-        res.status(201).json(crop);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// @desc    Get all crops (Admin or localized to ASC for officers)
+// @desc    Get all crops (Farmers see their own, Officers see their ASC)
 // @route   GET /api/crops
-// @access  Private
-router.get("/", protect, async (req, res) => {
-    try {
-        let query = {};
-        console.log(`[DEBUG] Fetching crops. User: ${req.user._id}, Role: ${req.user.role}`);
-
-        if (req.user.role === "FARMER") {
-            query.farmer = req.user._id;
-            console.log(`[DEBUG] Farmer query:`, query);
-        } else if (req.user.role === "CROP_OFFICER" || req.user.role === "ASC_OFFICER") {
-            // Filter by the officer's assigned ASC
-            if (!req.user.assignedAsc) {
-                console.log(`[DEBUG] Officer missing ASC assignment.`);
-                return res.status(400).json({ message: "Officer not assigned to any ASC" });
-            }
-            query.assignedAsc = req.user.assignedAsc;
-
-            // Further filter by specialization mappings
-            const specializationMap = {
-                "Paddy (වී)": "rice",
-                "Vegetables (එළවළු)": "vegetables",
-                "Fruits (පලතුරු)": "fruits",
-                "Spices (කුළුබඩු)": "spices",
-                "Tea (තේ)": "tea",
-                "Coconut (පොල්)": "coconut",
-                "Rubber (රබර්)": "rubber",
-                "Coffee (කෝපි)": "coffee",
-                "Export Crops (අපනයන බෝග)": "export",
-                "Other": "other"
-            };
-
-            if (req.user.specialization && specializationMap[req.user.specialization]) {
-                query.cropType = specializationMap[req.user.specialization];
-            }
-        }
-
-        const crops = await Crop.find(query)
-            .populate("farmer", "name email nic")
-            .populate("assignedAsc", "name district");
-
-        res.json(crops);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.get("/", protect, getCrops);
 
 // @desc    Update crop registration status
 // @route   PATCH /api/crops/:id/status
-// @access  Private (Officer only)
-router.patch("/:id/status", protect, authorize("CROP_OFFICER", "ASC_OFFICER"), async (req, res) => {
-    try {
-        const { status } = req.body;
-        if (!["PENDING", "APPROVED", "REJECTED"].includes(status)) {
-            return res.status(400).json({ message: "Invalid status" });
-        }
-
-        const crop = await Crop.findById(req.params.id);
-        if (!crop) {
-            return res.status(404).json({ message: "Crop not found" });
-        }
-
-        // Check if officer belongs to the same ASC as the crop
-        const officerAscId = req.user.assignedAsc?._id || req.user.assignedAsc;
-        if (crop.assignedAsc.toString() !== officerAscId.toString()) {
-            return res.status(403).json({ message: "Not authorized to update crops in other ASC centers" });
-        }
-
-        crop.status = status;
-        await crop.save();
-
-        res.json(crop);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+router.patch("/:id/status", protect, authorize("CROP_OFFICER", "ASC_OFFICER"), updateCropStatus);
 
 module.exports = router;
