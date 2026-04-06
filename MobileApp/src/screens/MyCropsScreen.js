@@ -4,6 +4,7 @@ import {
   Text, 
   StyleSheet, 
   FlatList, 
+  ScrollView,
   TouchableOpacity, 
   SafeAreaView, 
   StatusBar, 
@@ -33,6 +34,7 @@ const MyCropsScreen = ({ navigation }) => {
   const [crops, setCrops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('ALL');
 
@@ -43,10 +45,11 @@ const MyCropsScreen = ({ navigation }) => {
     try {
       const response = await apiClient.get('/crops');
       console.log(`[DEBUG] Received ${response.data.length} crops for user from API.`);
-      console.log(`[DEBUG] Raw response data:`, JSON.stringify(response.data, null, 2).substring(0, 500));
       setCrops(response.data);
+      setError(null);
     } catch (err) {
       console.error('[DEBUG] Error fetching crops:', err.response?.data || err.message);
+      setError(err.response?.data?.message || err.message || 'Failed to load crops');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -161,11 +164,18 @@ const MyCropsScreen = ({ navigation }) => {
         ListEmptyComponent={
           !loading && (
             <View style={styles.emptyBox}>
-              <Text style={styles.emptyIcon}>🌾</Text>
-              <Text style={styles.emptyTitle}>{t('farmer_crop.emptyList')}</Text>
-              <TouchableOpacity style={styles.emptyAddBtn} onPress={() => navigation.navigate('RegisterCrop')}>
-                <Text style={styles.emptyAddBtnText}>{t('farmer_crop.createNew')}</Text>
-              </TouchableOpacity>
+              <Text style={styles.emptyIcon}>{error ? '⚠️' : '🌾'}</Text>
+              <Text style={styles.emptyTitle}>{error || t('farmer_crop.emptyList')}</Text>
+              {!error && (
+                <TouchableOpacity style={styles.emptyAddBtn} onPress={() => navigation.navigate('RegisterCrop')}>
+                  <Text style={styles.emptyAddBtnText}>{t('farmer_crop.createNew')}</Text>
+                </TouchableOpacity>
+              )}
+              {error && (
+                <TouchableOpacity style={styles.emptyAddBtn} onPress={() => fetchCrops()}>
+                  <Text style={styles.emptyAddBtnText}>Retry</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )
         }

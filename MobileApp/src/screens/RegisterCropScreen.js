@@ -19,21 +19,45 @@ const RegisterCropScreen = ({ navigation }) => {
   const { userInfo } = useContext(AuthContext);
   const { t } = useLanguage();
 
+  // assignedAsc may be a populated object {_id, name, district} or just a string ID
+  const ascId = userInfo?.assignedAsc?._id
+    ? userInfo.assignedAsc._id.toString()
+    : (typeof userInfo?.assignedAsc === 'string' ? userInfo.assignedAsc : '');
+  const ascDistrict = userInfo?.assignedAsc?.district || '';
+
   const [formData, setFormData] = useState({
     cropType: '',
     variety: '',
     landSize: '',
     soilType: '',
     season: '',
-    location: userInfo?.assignedAsc?.district || '',
-    assignedAsc: userInfo?.assignedAsc?._id || userInfo?.assignedAsc || ''
+    location: ascDistrict,
+    assignedAsc: ascId,
   });
 
+  const [selectedDistrict, setSelectedDistrict] = useState(ascDistrict);
   const [ascs, setAscs] = useState([]);
   const [districts, setDistricts] = useState([]);
-  const [selectedDistrict, setSelectedDistrict] = useState(userInfo?.assignedAsc?.district || '');
   const [loading, setLoading] = useState(false);
   const [fetchingAscs, setFetchingAscs] = useState(false);
+
+  // Synchronize formData with userInfo once it's available (handles async load)
+  useEffect(() => {
+    if (userInfo?.assignedAsc) {
+      const uId = userInfo.assignedAsc._id?.toString() || (typeof userInfo.assignedAsc === 'string' ? userInfo.assignedAsc : '');
+      const uDist = userInfo.assignedAsc.district || '';
+      
+      setFormData(prev => ({
+        ...prev,
+        location: uDist || prev.location,
+        assignedAsc: uId || prev.assignedAsc
+      }));
+      
+      if (uDist) {
+        setSelectedDistrict(uDist);
+      }
+    }
+  }, [userInfo]);
 
   useEffect(() => {
     const fetchAscs = async () => {
@@ -63,7 +87,8 @@ const RegisterCropScreen = ({ navigation }) => {
       { key: 'variety', name: 'Variety' },
       { key: 'landSize', name: 'Land Size' },
       { key: 'soilType', name: 'Soil Type' },
-      { key: 'assignedAsc', name: 'ASC Center' }
+      { key: 'assignedAsc', name: 'ASC Center' },
+      { key: 'location', name: 'District/Location' }
     ];
 
     if (formData.cropType === 'rice') {
@@ -88,8 +113,11 @@ const RegisterCropScreen = ({ navigation }) => {
     try {
       const response = await apiClient.post('/crops', formData);
       if (response.status === 201) {
-        Alert.alert('Success', t('farmer_crop.successReg'));
-        navigation.navigate('Home'); // Back to dashboard
+        Alert.alert(
+          'Success',
+          t('farmer_crop.successReg'),
+          [{ text: t('farmer_crop.viewRequests'), onPress: () => navigation.navigate('MyCrops') }]
+        );
       }
     } catch (err) {
       console.error('Error registering crop:', err);
@@ -424,6 +452,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   infoText: { fontSize: 13, color: '#999', fontStyle: 'italic' },
+  emptyAscBox: {
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
   supportNote: { fontSize: 11, color: '#888', marginTop: 5 },
   submitBtn: {
     backgroundColor: '#1b5e20',
