@@ -33,6 +33,9 @@ const farmerMachinerySchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'ASC',
             required: true
+        },
+        image: {
+            type: String // To store base64 or a URL
         }
     },
     { timestamps: true }

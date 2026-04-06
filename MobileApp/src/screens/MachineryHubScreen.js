@@ -13,8 +13,10 @@ import {
   FlatList,
   RefreshControl,
   Modal,
-  Pressable
+  Pressable,
+  Image
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import apiClient from '../api/apiClient';
@@ -141,7 +143,8 @@ const MachineryHubScreen = ({ navigation }) => {
     machineryType: '',
     description: '',
     rentPerDay: '',
-    contactNumber: ''
+    contactNumber: '',
+    image: null
   });
 
   // Sync location and phone
@@ -216,20 +219,41 @@ const MachineryHubScreen = ({ navigation }) => {
   };
 
   const handleRentalSubmit = async () => {
-    if (!rentalForm.machineryType || !rentalForm.rentPerDay || !rentalForm.contactNumber) {
-      Alert.alert('Error', 'Please fill all required fields');
+    if (!rentalForm.machineryType || !rentalForm.rentPerDay || !rentalForm.contactNumber || !rentalForm.description) {
+      Alert.alert('Error', 'Please fill all required fields (including description)');
       return;
     }
     setLoading(true);
     try {
       await apiClient.post('/machinery/rent-out', rentalForm);
       Alert.alert('Success', 'Machinery listed for rent successfully!');
-      setRentalForm({ ...rentalForm, machineryType: '', description: '', rentPerDay: '' });
+      setRentalForm({ ...rentalForm, machineryType: '', description: '', rentPerDay: '', image: null });
       fetchData();
     } catch (err) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to list machinery');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.7,
+      base64: true,
+    });
+
+    if (!result.canceled) {
+      const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setRentalForm({ ...rentalForm, image: base64Img });
     }
   };
 
@@ -454,6 +478,17 @@ const MachineryHubScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.formGroup}>
+              <Text style={styles.label}>Description *</Text>
+              <TextInput 
+                style={[styles.input, { height: 80, textAlignVertical: 'top' }]} 
+                placeholder="Describe your machinery condition, capacity, etc." 
+                multiline
+                value={rentalForm.description}
+                onChangeText={(val) => setRentalForm({ ...rentalForm, description: val })}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
               <Text style={styles.label}>Contact Number *</Text>
               <TextInput 
                 style={styles.input} 
@@ -462,6 +497,25 @@ const MachineryHubScreen = ({ navigation }) => {
                 value={rentalForm.contactNumber}
                 onChangeText={(val) => setRentalForm({ ...rentalForm, contactNumber: val })}
               />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Machinery Photo</Text>
+              <TouchableOpacity style={styles.uploadBox} onPress={pickImage}>
+                {rentalForm.image ? (
+                  <Image source={{ uri: rentalForm.image }} style={styles.previewImage} />
+                ) : (
+                  <View style={styles.uploadPlaceholder}>
+                    <Text style={styles.uploadIcon}>📸</Text>
+                    <Text style={styles.uploadText}>Select Machinery Photo</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              {rentalForm.image && (
+                <TouchableOpacity onPress={() => setRentalForm({ ...rentalForm, image: null })} style={styles.removePhotoBtn}>
+                  <Text style={styles.removePhotoText}>Remove Photo</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             <TouchableOpacity style={styles.submitBtn} onPress={handleRentalSubmit} disabled={loading}>
@@ -475,15 +529,18 @@ const MachineryHubScreen = ({ navigation }) => {
             <Text style={styles.sectionTitle}>Community Marketplace</Text>
             {communityRentals.map(item => (
               <View key={item._id} style={styles.rentalCard}>
-                <View style={styles.rentalHeader}>
-                  <Text style={styles.rentalType}>{item.machineryType}</Text>
-                  <Text style={styles.rentalPrice}>LKR {item.rentPerDay}/day</Text>
+                {item.image && <Image source={{ uri: item.image }} style={styles.rentalCardImage} />}
+                <View style={styles.rentalContent}>
+                  <View style={styles.rentalHeader}>
+                    <Text style={styles.rentalType}>{item.machineryType}</Text>
+                    <Text style={styles.rentalPrice}>LKR {item.rentPerDay}/day</Text>
+                  </View>
+                  <Text style={styles.rentalOwner}>👤 {item.farmer?.name}</Text>
+                  <Text style={styles.rentalDesc}>{item.description}</Text>
+                  <TouchableOpacity style={styles.callBtn} onPress={() => Alert.alert('Contact', `Call ${item.contactNumber}`)}>
+                    <Text style={styles.callBtnText}>📞 Contact Farmer</Text>
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.rentalOwner}>👤 {item.farmer?.name}</Text>
-                <Text style={styles.rentalDesc}>{item.description}</Text>
-                <TouchableOpacity style={styles.callBtn} onPress={() => Alert.alert('Contact', `Call ${item.contactNumber}`)}>
-                  <Text style={styles.callBtnText}>📞 Contact Farmer</Text>
-                </TouchableOpacity>
               </View>
             ))}
             {communityRentals.length === 0 && (
@@ -627,7 +684,18 @@ const styles = StyleSheet.create({
   historyStatus: { fontSize: 12, color: '#2e7d32', fontWeight: 'bold' },
   emptyBox: { alignItems: 'center', padding: 40 },
   emptyIcon: { fontSize: 40, color: '#ccc', marginBottom: 10 },
-  emptyText: { color: '#999', textAlign: 'center' }
+  emptyText: { color: '#999', textAlign: 'center' },
+  // Upload Styles
+  uploadBox: { width: '100%', height: 180, borderRadius: 15, borderStyle: 'dashed', borderWidth: 2, borderColor: '#ccc', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', backgroundColor: '#fafafa' },
+  previewImage: { width: '100%', height: '100%' },
+  uploadPlaceholder: { alignItems: 'center' },
+  uploadIcon: { fontSize: 30, marginBottom: 5 },
+  uploadText: { fontSize: 13, color: '#666', fontWeight: '500' },
+  removePhotoBtn: { alignSelf: 'center', marginTop: 10 },
+  removePhotoText: { color: '#d32f2f', fontWeight: 'bold', fontSize: 12 },
+  // Rental Card Styles
+  rentalCardImage: { width: '100%', height: 150, borderTopLeftRadius: 15, borderTopRightRadius: 15 },
+  rentalContent: { padding: 15 }
 });
 
 export default MachineryHubScreen;

@@ -72,7 +72,7 @@ router.post("/services", protect, authorize("FARMER"), async (req, res) => {
 // @route   POST /api/machinery/rent-out
 router.post("/rent-out", protect, authorize("FARMER"), async (req, res) => {
     try {
-        const { machineryType, description, rentPerDay, contactNumber } = req.body;
+        const { machineryType, description, rentPerDay, contactNumber, image } = req.body;
         const ascId = req.user.assignedAsc?._id || req.user.assignedAsc;
 
         const rental = await FarmerMachinery.create({
@@ -81,7 +81,8 @@ router.post("/rent-out", protect, authorize("FARMER"), async (req, res) => {
             description,
             rentPerDay,
             contactNumber,
-            asc: ascId
+            asc: ascId,
+            image
         });
 
         res.status(201).json({ message: "Machinery listed for rent successfully!", rental });
