@@ -11,39 +11,129 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  RefreshControl
+  RefreshControl,
+  Modal,
+  Pressable
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import apiClient from '../api/apiClient';
 
+// --- Helpers ---
+const getTodayDate = (daysShift = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + daysShift);
+  return d.toISOString().split('T')[0];
+};
+
+const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// --- Components ---
+
+const CalendarModal = ({ visible, onClose, onSelect, target }) => {
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  
+  const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+
+  const renderDays = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const totalDays = daysInMonth(year, month);
+    const startDay = firstDayOfMonth(year, month);
+    
+    const dayViews = [];
+    for (let i = 0; i < startDay; i++) {
+        dayViews.push(<View key={`empty-${i}`} style={styles.calendarDayEmpty} />);
+    }
+    
+    for (let d = 1; d <= totalDays; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isPast = new Date(year, month, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+      
+      dayViews.push(
+        <TouchableOpacity 
+          key={d} 
+          disabled={isPast}
+          style={[styles.calendarDay, isToday && styles.calendarToday, isPast && styles.calendarDayDisabled]}
+          onPress={() => onSelect(dateStr)}
+        >
+          <Text style={[styles.calendarDayText, isPast && styles.calendarDayTextDisabled, isToday && styles.calendarTodayText]}>{d}</Text>
+        </TouchableOpacity>
+      );
+    }
+    return dayViews;
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <View style={styles.calendarContainer}>
+          <View style={styles.calendarHeader}>
+            <TouchableOpacity onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>
+              <Text style={styles.navText}>◀</Text>
+            </TouchableOpacity>
+            <Text style={styles.monthTitle}>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</Text>
+            <TouchableOpacity onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}>
+              <Text style={styles.navText}>▶</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.weekDaysHeader}>
+             {weekDays.map(wd => <Text key={wd} style={styles.weekDayText}>{wd}</Text>)}
+          </View>
+          <View style={styles.calendarGrid}>
+            {renderDays()}
+          </View>
+          <TouchableOpacity style={styles.closeModalBtn} onPress={onClose}>
+            <Text style={styles.closeModalBtnText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+};
+
 const MachineryHubScreen = ({ navigation }) => {
   const { userInfo } = useContext(AuthContext);
   const { t } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState('ASC_REQ'); // 'ASC_REQ', 'SERVICE_REQ', 'RENT_OUT', 'COMMUNITY'
+  const [activeTab, setActiveTab] = useState('ASC_REQ');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
-  // Data states
   const [availableMachinery, setAvailableMachinery] = useState([]);
   const [communityRentals, setCommunityRentals] = useState([]);
   const [history, setHistory] = useState({ machineryRequests: [], serviceRequests: [], myRentals: [] });
+  const [registeredCrops, setRegisteredCrops] = useState([]);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarTarget, setCalendarTarget] = useState('machinery');
+
+  const getAssignedLocation = useCallback(() => {
+    if (userInfo?.assignedAsc) {
+      const name = userInfo.assignedAsc.name || '';
+      const dist = userInfo.assignedAsc.district || '';
+      return name && dist ? `${name}, ${dist}` : (name || dist);
+    }
+    return '';
+  }, [userInfo]);
 
   // Form states
   const [machineryForm, setMachineryForm] = useState({
     machineryId: '',
-    requestDate: '',
-    duration: '',
+    requestDate: getTodayDate(),
+    duration: '1 Day',
     landSize: '',
-    location: userInfo?.assignedAsc ? `${userInfo.assignedAsc.name}, ${userInfo.assignedAsc.district}` : '',
+    location: '',
     additionalNotes: ''
   });
 
   const [serviceForm, setServiceForm] = useState({
     serviceType: '',
-    requestDate: '',
-    location: userInfo?.assignedAsc ? `${userInfo.assignedAsc.name}, ${userInfo.assignedAsc.district}` : '',
+    requestDate: getTodayDate(),
+    location: '',
     description: ''
   });
 
@@ -51,20 +141,32 @@ const MachineryHubScreen = ({ navigation }) => {
     machineryType: '',
     description: '',
     rentPerDay: '',
-    contactNumber: userInfo?.phone || ''
+    contactNumber: ''
   });
+
+  // Sync location and phone
+  useEffect(() => {
+    if (userInfo) {
+       const loc = getAssignedLocation();
+       setMachineryForm(prev => ({ ...prev, location: loc }));
+       setServiceForm(prev => ({ ...prev, location: loc }));
+       setRentalForm(prev => ({ ...prev, contactNumber: userInfo.phone || '' }));
+    }
+  }, [userInfo, getAssignedLocation]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [machRes, commRes, histRes] = await Promise.all([
+      const [machRes, commRes, histRes, cropRes] = await Promise.all([
         apiClient.get('/machinery/available'),
         apiClient.get('/machinery/community-rentals'),
-        apiClient.get('/machinery/my-history')
+        apiClient.get('/machinery/my-history'),
+        apiClient.get('/crops')
       ]);
       setAvailableMachinery(machRes.data);
       setCommunityRentals(commRes.data);
       setHistory(histRes.data);
+      setRegisteredCrops(cropRes.data);
     } catch (err) {
       console.error('Error fetching machinery data:', err);
     } finally {
@@ -86,7 +188,7 @@ const MachineryHubScreen = ({ navigation }) => {
     try {
       await apiClient.post('/machinery/requests', machineryForm);
       Alert.alert('Success', 'Machinery request submitted successfully!');
-      setMachineryForm({ ...machineryForm, machineryId: '', requestDate: '', duration: '', additionalNotes: '' });
+      setMachineryForm({ ...machineryForm, machineryId: '', requestDate: getTodayDate(), duration: '1 Day', additionalNotes: '' });
       fetchData();
     } catch (err) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to submit request');
@@ -104,7 +206,7 @@ const MachineryHubScreen = ({ navigation }) => {
     try {
       await apiClient.post('/machinery/services', serviceForm);
       Alert.alert('Success', 'Service request submitted successfully!');
-      setServiceForm({ ...serviceForm, serviceType: '', requestDate: '', description: '' });
+      setServiceForm({ ...serviceForm, serviceType: '', requestDate: getTodayDate(), description: '' });
       fetchData();
     } catch (err) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to submit request');
@@ -129,6 +231,15 @@ const MachineryHubScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDateSelect = (dateStr) => {
+    if (calendarTarget === 'machinery') {
+      setMachineryForm({ ...machineryForm, requestDate: dateStr });
+    } else {
+      setServiceForm({ ...serviceForm, requestDate: dateStr });
+    }
+    setShowCalendar(false);
   };
 
   const renderTabButton = (id, title, icon) => (
@@ -165,6 +276,13 @@ const MachineryHubScreen = ({ navigation }) => {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {setRefreshing(true); fetchData();}} />}
       >
+        <CalendarModal 
+          visible={showCalendar} 
+          onClose={() => setShowCalendar(false)} 
+          onSelect={handleDateSelect}
+          target={calendarTarget}
+        />
+
         {activeTab === 'ASC_REQ' && (
           <View style={styles.card}>
             <Text style={styles.cardHeader}>Request from ASC</Text>
@@ -196,34 +314,59 @@ const MachineryHubScreen = ({ navigation }) => {
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Request Date *</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="YYYY-MM-DD" 
-                value={machineryForm.requestDate}
-                onChangeText={(val) => setMachineryForm({ ...machineryForm, requestDate: val })}
-              />
+              <TouchableOpacity 
+                style={[styles.input, styles.dateInput]} 
+                onPress={() => { setCalendarTarget('machinery'); setShowCalendar(true); }}
+              >
+                <Text style={styles.dateInputText}>📅 {machineryForm.requestDate || 'Select Date'}</Text>
+              </TouchableOpacity>
             </View>
 
-            <View style={styles.formRow}>
-              <View style={[styles.formGroup, { flex: 1, marginRight: 10 }]}>
-                <Text style={styles.label}>Duration *</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="e.g. 2 Days" 
-                  value={machineryForm.duration}
-                  onChangeText={(val) => setMachineryForm({ ...machineryForm, duration: val })}
-                />
-              </View>
-              <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Land Size (Ac)</Text>
-                <TextInput 
+            <View style={styles.formGroup}>
+               <Text style={styles.label}>Land Size (Acres) *</Text>
+               <TextInput 
                   style={styles.input} 
                   placeholder="e.g. 2.5" 
                   keyboardType="numeric"
                   value={machineryForm.landSize}
                   onChangeText={(val) => setMachineryForm({ ...machineryForm, landSize: val })}
                 />
-              </View>
+               
+               {registeredCrops.length > 0 && (
+                 <View style={styles.suggestionBox}>
+                   <Text style={styles.suggestionTitle}>Auto-fill from your crops:</Text>
+                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                     {registeredCrops.map(crop => (
+                       <TouchableOpacity 
+                        key={crop._id} 
+                        style={styles.suggestionChip}
+                        onPress={() => setMachineryForm({ 
+                          ...machineryForm, 
+                          landSize: crop.landSize.toString(),
+                          location: crop.location || machineryForm.location 
+                        })}
+                       >
+                         <Text style={styles.suggestionText}>🌾 {crop.cropType} ({crop.landSize} Ac)</Text>
+                       </TouchableOpacity>
+                     ))}
+                   </ScrollView>
+                 </View>
+               )}
+            </View>
+
+            <View style={styles.formGroup}>
+                <Text style={styles.label}>Duration *</Text>
+                <View style={[styles.chipContainer, { flexWrap: 'wrap' }]}>
+                  {['1 Day', '2 Days', '3 Days', '1 Week'].map(d => (
+                    <TouchableOpacity 
+                      key={d} 
+                      style={[styles.chip, machineryForm.duration === d && styles.activeChip, { marginBottom: 10 }]}
+                      onPress={() => setMachineryForm({ ...machineryForm, duration: d })}
+                    >
+                      <Text style={[styles.chipText, machineryForm.duration === d && styles.activeChipText]}>{d}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
             </View>
 
             <TouchableOpacity style={styles.submitBtn} onPress={handleMachinerySubmit} disabled={loading}>
@@ -249,12 +392,12 @@ const MachineryHubScreen = ({ navigation }) => {
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Preferred Date *</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="YYYY-MM-DD" 
-                value={serviceForm.requestDate}
-                onChangeText={(val) => setServiceForm({ ...serviceForm, requestDate: val })}
-              />
+              <TouchableOpacity 
+                style={[styles.input, styles.dateInput]} 
+                onPress={() => { setCalendarTarget('service'); setShowCalendar(true); }}
+              >
+                <Text style={styles.dateInputText}>📅 {serviceForm.requestDate || 'Select Date'}</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.formGroup}>
@@ -411,7 +554,6 @@ const styles = StyleSheet.create({
   activeChip: { backgroundColor: '#2e7d32' },
   chipText: { fontSize: 13, color: '#666' },
   activeChipText: { color: '#fff', fontWeight: 'bold' },
-  activeChipText: { color: '#fff', fontWeight: 'bold' },
   assignedCenterBox: {
     backgroundColor: '#f5f5f5',
     padding: 12,
@@ -436,6 +578,32 @@ const styles = StyleSheet.create({
   submitBtn: { backgroundColor: '#1b5e20', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10 },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1b5e20', marginBottom: 15 },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  miniBtn: { backgroundColor: '#e8f5e9', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, marginLeft: 8, borderWidth: 1, borderColor: '#c8e6c9' },
+  miniBtnText: { fontSize: 12, color: '#2e7d32', fontWeight: 'bold' },
+  suggestionBox: { marginTop: 10, backgroundColor: '#f1f8e9', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: '#dcedc8' },
+  suggestionTitle: { fontSize: 11, color: '#558b2f', fontWeight: 'bold', marginBottom: 5 },
+  suggestionChip: { backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginRight: 8, borderWidth: 1, borderColor: '#c5e1a5' },
+  suggestionText: { fontSize: 12, color: '#33691e' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  calendarContainer: { width: '90%', backgroundColor: '#fff', borderRadius: 20, padding: 20, elevation: 5 },
+  calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  monthTitle: { fontSize: 18, fontWeight: 'bold', color: '#1b5e20' },
+  navText: { fontSize: 24, paddingHorizontal: 15, color: '#2e7d32' },
+  weekDaysHeader: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 10, marginBottom: 10 },
+  weekDayText: { flex: 1, textAlign: 'center', fontSize: 12, color: '#999', fontWeight: '600' },
+  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  calendarDay: { width: '14.28%', height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
+  calendarDayEmpty: { width: '14.28%', height: 40 },
+  calendarDayText: { fontSize: 14, color: '#333' },
+  calendarToday: { backgroundColor: '#e8f5e9', borderWidth: 1, borderColor: '#2e7d32' },
+  calendarTodayText: { color: '#2e7d32', fontWeight: 'bold' },
+  calendarDayDisabled: { backgroundColor: '#f9f9f9', opacity: 0.3 },
+  calendarDayTextDisabled: { color: '#ccc' },
+  closeModalBtn: { marginTop: 20, padding: 15, alignItems: 'center', borderTopWidth: 1, borderTopColor: '#eee' },
+  closeModalBtnText: { color: '#666', fontWeight: 'bold' },
+  dateInput: { borderStyle: 'dashed', borderColor: '#2e7d32', backgroundColor: '#fafffa' },
+  dateInputText: { fontSize: 15, color: '#1b5e20', fontWeight: '600' },
   rentalCard: { backgroundColor: '#fff', borderRadius: 15, padding: 15, marginBottom: 15, elevation: 2 },
   rentalHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   rentalType: { fontSize: 16, fontWeight: 'bold', color: '#333' },

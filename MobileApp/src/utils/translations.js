@@ -78,6 +78,7 @@ export const translations = {
             subtitleList: "Tracking your seasonal cultivations and approval status.",
             emptyList: "No crops registered yet.",
             createNew: "Register New",
+            submitRequest: "Submit Request",
         },
         auth: {
             district: "District",
@@ -308,6 +309,7 @@ export const translations = {
             subtitleList: "ඔබේ වාරික වගාවන් සහ අනුමත තත්ත්වය නිරීක්ෂණය කිරීම.",
             emptyList: "තවමත් බෝග ලියාපදිංචි කර නොමැත.",
             createNew: "නව ලියාපදිංචිය",
+            submitRequest: "ඉල්ලීම ඉදිරිපත් කරන්න",
         },
         auth: {
             district: "දිස්ත්‍රික්කය",

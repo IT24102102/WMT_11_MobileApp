@@ -348,7 +348,7 @@ const RegisterCropScreen = ({ navigation }) => {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitBtnText}>{t('common.save')}</Text>
+              <Text style={styles.submitBtnText}>{t('farmer_crop.submitRequest')}</Text>
             )}
           </TouchableOpacity>
         </View>
