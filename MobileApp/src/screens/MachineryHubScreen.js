@@ -382,12 +382,17 @@ const MachineryHubScreen = ({ navigation }) => {
             
             <View style={styles.formGroup}>
               <Text style={styles.label}>Service Type *</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="e.g. Tractor Plowing, Harvesting Labor" 
-                value={serviceForm.serviceType}
-                onChangeText={(val) => setServiceForm({ ...serviceForm, serviceType: val })}
-              />
+              <View style={[styles.chipContainer, { flexWrap: 'wrap' }]}>
+                {['Machinery Rental', 'Machinery with Operator', 'Custom Farming Service', 'Equipment Maintenance'].map(s => (
+                  <TouchableOpacity 
+                    key={s} 
+                    style={[styles.chip, serviceForm.serviceType === s && styles.activeChip, { marginBottom: 10 }]}
+                    onPress={() => setServiceForm({ ...serviceForm, serviceType: s })}
+                  >
+                    <Text style={[styles.chipText, serviceForm.serviceType === s && styles.activeChipText]}>{s}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             <View style={styles.formGroup}>
@@ -424,12 +429,17 @@ const MachineryHubScreen = ({ navigation }) => {
             
             <View style={styles.formGroup}>
               <Text style={styles.label}>Machinery Type *</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="e.g. 2-Wheel Tractor" 
-                value={rentalForm.machineryType}
-                onChangeText={(val) => setRentalForm({ ...rentalForm, machineryType: val })}
-              />
+              <View style={[styles.chipContainer, { flexWrap: 'wrap' }]}>
+                {['Tractor', 'Harvester', 'Plough', 'Seeder', 'Sprayer'].map(m => (
+                  <TouchableOpacity 
+                    key={m} 
+                    style={[styles.chip, rentalForm.machineryType === m && styles.activeChip, { marginBottom: 10 }]}
+                    onPress={() => setRentalForm({ ...rentalForm, machineryType: m })}
+                  >
+                    <Text style={[styles.chipText, rentalForm.machineryType === m && styles.activeChipText]}>{m}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             <View style={styles.formGroup}>
