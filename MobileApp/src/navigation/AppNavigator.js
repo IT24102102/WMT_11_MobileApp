@@ -27,6 +27,8 @@ import ManageOfficers from '../screens/admin/ManageOfficers';
 import ManageASC from '../screens/admin/ManageASC';
 import CropDashboard from '../screens/admin/CropDashboard';
 import RegionalReports from '../screens/admin/RegionalReports';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 
 const Stack = createStackNavigator();
 
@@ -51,6 +53,8 @@ const AppNavigator = () => {
             <Stack.Screen name="Landing" component={LandingScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
             {/* Test Bypass Screens */}
             <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
             <Stack.Screen name="ASCDashboard" component={ASCDashboard} />

@@ -151,9 +151,77 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
+// @desc    Forgot Password
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res, next) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404);
+      throw new Error("No user found with this email");
+    }
+
+    // Generate 6-digit code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Set code and expiry (15 mins)
+    user.resetPasswordCode = resetCode;
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+
+    await user.save();
+
+    // [DEBUG] Log code to console for easy testing
+    console.log(`\n************************************`);
+    console.log(`PASSWORD RESET CODE FOR ${email}: ${resetCode}`);
+    console.log(`************************************\n`);
+
+    res.json({ message: "Reset code sent to email" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Reset Password
+// @route   POST /api/auth/reset-password
+// @access  Public
+const resetPassword = async (req, res, next) => {
+  const { email, code, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({ 
+      email, 
+      resetPasswordCode: code,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      res.status(400);
+      throw new Error("Invalid or expired reset code");
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    user.resetPasswordCode = null;
+    user.resetPasswordExpire = null;
+
+    await user.save();
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getMe,
-  updateProfile
+  updateProfile,
+  forgotPassword,
+  resetPassword
 };

@@ -65,6 +65,24 @@ export const AuthProvider = ({ children }) => {
     await UniversalStorage.setItem('userInfo', JSON.stringify(newUser));
   };
 
+  const forgotPassword = async (email) => {
+    try {
+      const response = await apiClient.post('/auth/forgot-password', { email });
+      return { success: true, message: response.data.message };
+    } catch (e) {
+      return { success: false, error: e.response?.data?.message || 'Failed to send reset code' };
+    }
+  };
+
+  const resetPassword = async (email, code, newPassword) => {
+    try {
+      const response = await apiClient.post('/auth/reset-password', { email, code, newPassword });
+      return { success: true, message: response.data.message };
+    } catch (e) {
+      return { success: false, error: e.response?.data?.message || 'Failed to reset password' };
+    }
+  };
+
   const isLoggedIn = async () => {
     try {
       setIsLoading(true);
@@ -87,7 +105,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ login, register, logout, updateUserInfo, isLoading, userToken, userInfo }}>
+    <AuthContext.Provider value={{ login, register, logout, updateUserInfo, forgotPassword, resetPassword, isLoading, userToken, userInfo }}>
       {children}
     </AuthContext.Provider>
   );

@@ -10,14 +10,24 @@ import {
   ActivityIndicator,
   Image,
   TextInput,
-  RefreshControl
+  RefreshControl,
+  ScrollView
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import apiClient from '../api/apiClient';
 
 const CATEGORIES = [
-  'All', 'Seeds', 'Fertilizers', 'Pesticides', 'Tools', 'Irrigation', 'Animal Health', 'Other'
+  'All',
+  'Seeds & Planting Material',
+  'Crop Nutrients',
+  'Crop Protection',
+  'Agri Equipment',
+  'Animal Health & Nutrition',
+  'Irrigation & Water Management',
+  'Home & Garden',
+  'Post-Harvest & Storage',
+  'Other'
 ];
 
 const AgriProductsScreen = ({ navigation }) => {
@@ -36,9 +46,10 @@ const AgriProductsScreen = ({ navigation }) => {
 
     try {
       const response = await apiClient.get('/products/available');
+      console.log(`[DEBUG] Received ${response.data.length} products from API for User: ${userInfo?.role}, District: ${userInfo?.assignedAsc?.district || 'NONE'}`);
       setProducts(response.data);
     } catch (err) {
-      console.error('Error fetching products:', err);
+      console.error('[DEBUG] Error fetching products:', err.response?.data || err.message);
     } finally {
       setLoading(false);
       setRefreshing(false);

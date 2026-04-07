@@ -6,7 +6,7 @@ import UniversalStorage from '../utils/UniversalStorage';
 // 2. If using Expo Tunnel (--tunnel): Use your Pinggy or Serveo URL
 const LOCAL_IP = '192.168.1.6'; // Replace with your current local IP if needed
 // I have started a NEW stable tunnel below using IPv4 (127.0.0.1) to avoid 502 errors:
-const TUNNEL_URL = 'https://c8bb29a63633da8b-112-134-186-116.serveousercontent.com';
+const TUNNEL_URL = 'https://c2af8b934d56675a-112-134-190-16.serveousercontent.com';
 
 const apiClient = axios.create({
   // Choice A: Local Wifi

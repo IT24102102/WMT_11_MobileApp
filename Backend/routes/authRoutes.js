@@ -4,9 +4,19 @@ const {
   registerUser,
   loginUser,
   getMe,
-  updateProfile
+  updateProfile,
+  forgotPassword,
+  resetPassword
 } = require("../Controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
+
+// @desc    Forgot password
+// @route   POST /api/auth/forgot-password
+router.post("/forgot-password", forgotPassword);
+
+// @desc    Reset password
+// @route   POST /api/auth/reset-password
+router.post("/reset-password", resetPassword);
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
