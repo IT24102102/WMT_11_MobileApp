@@ -11,10 +11,12 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  RefreshControl
+  RefreshControl,
+  Image
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import * as ImagePicker from 'expo-image-picker';
 import apiClient from '../api/apiClient';
 
 const SellHarvestScreen = ({ navigation }) => {
@@ -31,7 +33,7 @@ const SellHarvestScreen = ({ navigation }) => {
     category: 'Other',
     description: '',
     price: '',
-    unit: 'kg',
+    unit: '',
     image: ''
   });
 
@@ -66,13 +68,51 @@ const SellHarvestScreen = ({ navigation }) => {
     try {
       await apiClient.post('/products', form);
       Alert.alert('Success', 'Harvest listed successfully!');
-      setForm({ name: '', category: 'Other', description: '', price: '', unit: 'kg', image: '' });
+      setForm({ name: '', category: 'Other', description: '', price: '', unit: '', image: '' });
       setActiveTab('MY_LISTINGS');
     } catch (err) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to list harvest');
     } finally {
       setLoading(false);
     }
+  };
+
+  const pickImage = async (useCamera = false) => {
+    const { status } = await (useCamera 
+      ? ImagePicker.requestCameraPermissionsAsync() 
+      : ImagePicker.requestMediaLibraryPermissionsAsync());
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Sorry, we need camera/media library permissions to make this work!');
+      return;
+    }
+
+    const result = await (useCamera 
+      ? ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.7,
+          base64: true,
+        })
+      : ImagePicker.launchImageLibraryAsync({
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.7,
+          base64: true,
+        }));
+
+    if (!result.canceled) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setForm({ ...form, image: base64Image });
+    }
+  };
+
+  const selectImageSource = () => {
+    Alert.alert('Upload Photo', 'Choose an option', [
+      { text: 'Camera', onPress: () => pickImage(true) },
+      { text: 'Gallery', onPress: () => pickImage(false) },
+      { text: 'Cancel', style: 'cancel' }
+    ]);
   };
 
   const handleDelete = async (id) => {
@@ -118,10 +158,27 @@ const SellHarvestScreen = ({ navigation }) => {
       {activeTab === 'LIST_NEW' ? (
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.card}>
+            {/* Image Selector */}
+            <TouchableOpacity style={styles.imageSelector} onPress={selectImageSource}>
+              {form.image ? (
+                <View style={styles.imageWrapper}>
+                  <Image source={{ uri: form.image }} style={styles.previewImage} />
+                  <View style={styles.changeImageOverlay}>
+                    <Text style={styles.changeImageText}>Change Photo</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Text style={styles.cameraIcon}>📸</Text>
+                  <Text style={styles.imagePlaceholderText}>Add Harvest Photo</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
             <Text style={styles.formLabel}>What are you selling? *</Text>
             <TextInput 
               style={styles.input} 
-              placeholder="e.g. Red Rice, Carrots (50kg)" 
+              placeholder="e.g. Red Rice, Carrots" 
               value={form.name}
               onChangeText={(val) => setForm({ ...form, name: val })}
             />
@@ -150,16 +207,26 @@ const SellHarvestScreen = ({ navigation }) => {
                   onChangeText={(val) => setForm({ ...form, price: val })}
                 />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.formLabel}>Unit *</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="kg" 
-                  value={form.unit}
-                  onChangeText={(val) => setForm({ ...form, unit: val })}
-                />
-              </View>
             </View>
+
+            <Text style={styles.formLabel}>Unit *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+              {units.map(u => (
+                <TouchableOpacity 
+                  key={u} 
+                  style={[styles.chip, form.unit === u && styles.activeChip]}
+                  onPress={() => setForm({ ...form, unit: u })}
+                >
+                  <Text style={[styles.chipText, form.unit === u && styles.activeChipText]}>{u}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity 
+                style={[styles.chip, !units.includes(form.unit) && form.unit !== '' && styles.activeChip]}
+                onPress={() => Alert.prompt('Custom Unit', 'Enter your unit', (u) => setForm({ ...form, unit: u }))}
+              >
+                <Text style={[styles.chipText, !units.includes(form.unit) && form.unit !== '' && styles.activeChipText]}>Other</Text>
+              </TouchableOpacity>
+            </ScrollView>
 
             <Text style={styles.formLabel}>Description</Text>
             <TextInput 
@@ -181,6 +248,13 @@ const SellHarvestScreen = ({ navigation }) => {
           keyExtractor={item => item._id}
           renderItem={({ item }) => (
             <View style={styles.listingCard}>
+              <View style={styles.listingImageCol}>
+                {item.image ? (
+                  <Image source={{ uri: item.image }} style={styles.listingThumb} />
+                ) : (
+                  <View style={styles.listingThumbPlaceholder}><Text>🌾</Text></View>
+                )}
+              </View>
               <View style={styles.listingInfo}>
                 <Text style={styles.listingTitle}>{item.name}</Text>
                 <Text style={styles.listingCategory}>{item.category} • {item.status}</Text>
@@ -239,7 +313,18 @@ const styles = StyleSheet.create({
   deleteIcon: { fontSize: 18 },
   emptyBox: { flex: 1, alignItems: 'center', marginTop: 100, padding: 40 },
   emptyIcon: { fontSize: 60, color: '#ccc', marginBottom: 20 },
-  emptyText: { color: '#999', textAlign: 'center', fontSize: 14 }
+  emptyText: { color: '#999', textAlign: 'center', fontSize: 14 },
+  imageSelector: { height: 180, borderRadius: 15, backgroundColor: '#f0f4f0', borderStyle: 'dashed', borderWidth: 2, borderColor: '#2e7d32', overflow: 'hidden', marginBottom: 10 },
+  imagePlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  cameraIcon: { fontSize: 40, marginBottom: 8 },
+  imagePlaceholderText: { color: '#2e7d32', fontWeight: '500' },
+  imageWrapper: { flex: 1 },
+  previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  changeImageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.4)', padding: 8, alignItems: 'center' },
+  changeImageText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  listingImageCol: { marginRight: 15 },
+  listingThumb: { width: 60, height: 60, borderRadius: 10 },
+  listingThumbPlaceholder: { width: 60, height: 60, borderRadius: 10, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }
 });
 
 export default SellHarvestScreen;
