@@ -69,7 +69,10 @@ const AgriProductsScreen = ({ navigation }) => {
   });
 
   const renderProductItem = ({ item }) => (
-    <TouchableOpacity style={styles.card} onPress={() => {}}>
+    <TouchableOpacity 
+      style={styles.card} 
+      onPress={() => navigation.navigate('ProductDetails', { product: item })}
+    >
       <View style={styles.imageContainer}>
         {item.image ? (
           <Image source={{ uri: item.image }} style={styles.productImage} />
@@ -86,7 +89,10 @@ const AgriProductsScreen = ({ navigation }) => {
         <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.productPrice}>LKR {item.price} <Text style={styles.unitText}>/ {item.unit}</Text></Text>
         <Text style={styles.sellerName}>👤 {item.seller?.name || 'AgroLanka Store'}</Text>
-        <TouchableOpacity style={styles.buyBtn} onPress={() => {}}>
+        <TouchableOpacity 
+          style={styles.buyBtn} 
+          onPress={() => navigation.navigate('ProductDetails', { product: item })}
+        >
           <Text style={styles.buyBtnText}>View Details</Text>
         </TouchableOpacity>
       </View>

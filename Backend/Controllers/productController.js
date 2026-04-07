@@ -36,7 +36,7 @@ const getAvailableProducts = async (req, res, next) => {
         // 3. Exclude user's own products
         query.seller = { $ne: user._id };
 
-        const products = await Product.find(query).populate("seller", "name email");
+        const products = await Product.find(query).populate("seller", "name email phone");
         const totalProducts = await Product.countDocuments();
         console.log(`[DEBUG] Found ${products.length} matching products. (Total in DB: ${totalProducts})`);
         res.json(products);

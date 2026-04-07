@@ -20,9 +20,15 @@ const createPurchase = async (req, res, next) => {
             res.status(404);
             throw new Error("Product not found");
         }
-        if (product.sellerRole !== "FARMER") {
+
+        if (product.status === "Out of Stock") {
             res.status(400);
-            throw new Error("This product is not a farmer listing");
+            throw new Error("This product is already sold out");
+        }
+
+        if (product.seller._id.toString() === req.user._id.toString()) {
+            res.status(400);
+            throw new Error("You cannot purchase your own product");
         }
 
         const purchase = await Purchase.create({
