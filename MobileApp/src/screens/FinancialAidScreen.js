@@ -131,11 +131,22 @@ const FinancialAidScreen = ({ navigation }) => {
 
   const calculateEMI = () => {
     const P = parseFloat(loanForm.loanAmount) || 0;
-    const r = (interestRate / 100) / 12;
     const n = parseInt(loanForm.repaymentPeriod);
-    if (P === 0) return 0;
-    const emi = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-    return emi.toFixed(2);
+    const R = interestRate / 100; // Annual rate in decimal form
+    
+    if (P === 0 || n === 0) return { emi: '0.00', total: '0.00', interest: '0.00' };
+    
+    // Flat Rate Simple Interest Calculation
+    // Total Interest = P * R * (n/12)
+    const totalInterest = P * R * (n / 12);
+    const totalPayable = P + totalInterest;
+    const emi = totalPayable / n;
+    
+    return { 
+      emi: emi.toFixed(2), 
+      total: totalPayable.toFixed(2), 
+      interest: totalInterest.toFixed(2) 
+    };
   };
 
   return (
@@ -220,9 +231,20 @@ const FinancialAidScreen = ({ navigation }) => {
                     <Text style={styles.emiLabel}>Repayment Period</Text>
                     <Text style={styles.emiValueSmall}>{loanForm.repaymentPeriod} Months</Text>
                   </View>
-                  <View style={{ alignItems: 'right' }}>
+                  <View style={{ alignItems: 'flex-end' }}>
                     <Text style={styles.emiLabel}>Monthly EMI</Text>
-                    <Text style={styles.emiValueSmall}>LKR {calculateEMI()}</Text>
+                    <Text style={styles.emiValue}>LKR {calculateEMI().emi}</Text>
+                  </View>
+                </View>
+                
+                <View style={[styles.emiRow, { marginTop: 10, borderTopWidth: 1, borderTopColor: '#dcfce7', paddingTop: 10 }]}>
+                  <View>
+                    <Text style={styles.emiLabelSmall}>Total Interest</Text>
+                    <Text style={styles.emiValueTiny}>LKR {calculateEMI().interest}</Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={styles.emiLabelSmall}>Total Payable</Text>
+                    <Text style={styles.emiValueTiny}>LKR {calculateEMI().total}</Text>
                   </View>
                 </View>
               </View>
@@ -273,7 +295,11 @@ const FinancialAidScreen = ({ navigation }) => {
               <Text style={styles.termsText}>I accept the loan terms and conditions.</Text>
             </View>
 
-            <TouchableOpacity style={styles.submitBtn} onPress={handleLoanSubmit} disabled={loading}>
+            <TouchableOpacity 
+              style={[styles.submitBtn, (!loanForm.termsAccepted || loading) && styles.disabledBtn]} 
+              onPress={handleLoanSubmit} 
+              disabled={!loanForm.termsAccepted || loading}
+            >
               {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Submit Application</Text>}
             </TouchableOpacity>
           </View>
@@ -398,9 +424,16 @@ const styles = StyleSheet.create({
   activeChip: { backgroundColor: '#2e7d32' },
   chipText: { fontSize: 13, color: '#666' },
   activeChipText: { color: '#fff', fontWeight: 'bold' },
-  emiBox: { backgroundColor: '#f1f8e9', padding: 15, borderRadius: 12, marginBottom: 20, alignItems: 'center' },
-  emiLabel: { fontSize: 12, color: '#558b2f', marginBottom: 5 },
-  emiValue: { fontSize: 22, fontWeight: 'bold', color: '#2e7d32' },
+  emiBox: {
+    backgroundColor: '#f0fdf4',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  emiLabel: { fontSize: 12, color: '#15803d', marginBottom: 5 },
+  emiValue: { fontSize: 20, fontWeight: 'bold', color: '#16a34a' },
   assignedCenterBox: {
     backgroundColor: '#fff',
     padding: 12,
@@ -443,6 +476,7 @@ const styles = StyleSheet.create({
   termsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
   termsText: { flex: 1, fontSize: 13, color: '#666', marginLeft: 10 },
   submitBtn: { backgroundColor: '#1b5e20', borderRadius: 12, padding: 16, alignItems: 'center' },
+  disabledBtn: { backgroundColor: '#a5d6a7', opacity: 0.7 },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -5 },
@@ -458,6 +492,9 @@ const styles = StyleSheet.create({
   smallChipText: { fontSize: 11, color: '#64748b', fontWeight: '500' },
   emiRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   emiValueSmall: { fontSize: 18, fontWeight: 'bold', color: '#16a34a' },
+  emiValue: { fontSize: 20, fontWeight: 'bold', color: '#16a34a' },
+  emiLabelSmall: { fontSize: 10, color: '#65a30d', marginBottom: 2 },
+  emiValueTiny: { fontSize: 14, fontWeight: '600', color: '#15803d' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1b5e20', marginBottom: 15 },
   historyCard: { backgroundColor: '#fff', borderRadius: 15, padding: 15, marginBottom: 12, elevation: 2 },
   historyHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },

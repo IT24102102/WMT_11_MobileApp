@@ -124,10 +124,13 @@ const FinancialAssistance = () => {
         }
         setError('');
         const P = parseFloat(loanData.loanAmount);
-        const r = (interestRate / 100) / 12;
         const n = parseInt(loanData.repaymentPeriod);
- 
-        const emi = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+        const R = interestRate / 100;
+
+        const totalInterest = P * R * (n / 12);
+        const totalPayable = P + totalInterest;
+        const emi = totalPayable / n;
+        
         setMonthlyInstallment(emi.toFixed(2));
     };
  

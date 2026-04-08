@@ -70,12 +70,14 @@ router.post("/apply", protect, authorize("FARMER"), async (req, res) => {
             return res.status(400).json({ message: "Terms and conditions must be accepted." });
         }
 
-        // Calculate EMI and Total Payable
+        // Flat Rate Simple Interest Calculation
         const P = parseFloat(loanAmount);
-        const r = (parseFloat(interestRate) / 100) / 12;
+        const R = parseFloat(interestRate) / 100;
         const n = parseInt(repaymentPeriod);
-        const emi = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-        const totalPayable = emi * n;
+        
+        const totalInterest = P * R * (n / 12);
+        const totalPayable = P + totalInterest;
+        const emi = totalPayable / n;
 
         const newLoan = new Loan({
             farmer: req.user._id,
@@ -86,8 +88,8 @@ router.post("/apply", protect, authorize("FARMER"), async (req, res) => {
             collateral,
             termsAccepted,
             asc,
-            monthlyInstallment: emi.toFixed(2),
-            totalPayable: totalPayable.toFixed(2)
+            totalPayable: totalPayable.toFixed(2),
+            monthlyInstallment: emi.toFixed(2)
         });
 
         await newLoan.save();
