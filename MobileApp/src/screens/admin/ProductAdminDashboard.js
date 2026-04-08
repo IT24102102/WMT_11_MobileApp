@@ -16,6 +16,7 @@ import {
   Modal,
   Dimensions
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import apiClient from '../../api/apiClient';
@@ -41,7 +42,14 @@ const ProductAdminDashboard = ({ navigation }) => {
   // Form states
   const [showAddForm, setShowAddForm] = useState(false);
   const [newProduct, setNewProduct] = useState({
-    name: '', category: 'Agri Equipment', description: '', price: '', unit: 'kg'
+    name: '', 
+    category: 'Agri Equipment', 
+    description: '', 
+    price: '', 
+    unit: 'kg',
+    stock: '',
+    image: null,
+    publishingDistricts: userInfo?.serviceDistricts || []
   });
 
   // Buy Modal states
@@ -108,17 +116,48 @@ const ProductAdminDashboard = ({ navigation }) => {
     }
   };
 
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled) {
+      setNewProduct({ ...newProduct, image: `data:image/jpeg;base64,${result.assets[0].base64}` });
+    }
+  };
+
   const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.unit) {
       Alert.alert('Error', 'Please fill all required fields.');
       return;
     }
+    if (newProduct.publishingDistricts.length === 0) {
+      Alert.alert('Error', 'Please select at least one publishing district.');
+      return;
+    }
+
     try {
       setLoading(true);
-      await apiClient.post('/products', newProduct);
+      await apiClient.post('/products', {
+        ...newProduct,
+        districts: newProduct.publishingDistricts
+      });
       Alert.alert('Success', t('productAdmin.publish'));
       setShowAddForm(false);
-      setNewProduct({ name: '', category: 'Agri Equipment', description: '', price: '', unit: 'kg' });
+      setNewProduct({ 
+        name: '', 
+        category: 'Agri Equipment', 
+        description: '', 
+        price: '', 
+        unit: 'kg',
+        stock: '',
+        image: null,
+        publishingDistricts: userInfo?.serviceDistricts || []
+      });
       fetchData();
     } catch (error) {
       Alert.alert('Error', 'Failed to list product.');
@@ -178,20 +217,30 @@ const ProductAdminDashboard = ({ navigation }) => {
   const renderProductItem = ({ item, isMarketplace }) => (
     <View style={styles.listItem}>
       <View style={styles.listHeader}>
-        <View style={{ flex: 1 }}>
+        {item.image && (
+          <Image source={{ uri: item.image }} style={styles.itemImage} />
+        )}
+        <View style={{ flex: 1, marginLeft: item.image ? 12 : 0 }}>
           <Text style={styles.itemTitle}>{item.name}</Text>
           <Text style={styles.itemCategory}>{item.category}</Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
-          <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
+          <View style={[styles.statusBadge, { alignSelf: 'flex-start', marginTop: 5, backgroundColor: getStatusColor(item.status) + '20' }]}>
+            <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
+          </View>
         </View>
       </View>
       
-      <Text style={styles.itemPrice}>LKR {item.price.toLocaleString()} / {item.unit}</Text>
+      <View style={styles.itemInfoRow}>
+        <Text style={styles.itemPrice}>LKR {item.price.toLocaleString()} / {item.unit}</Text>
+        {item.stock > 0 && (
+          <Text style={styles.stockText}>📦 Stock: {item.stock} {item.unit}s</Text>
+        )}
+      </View>
+
+      <Text style={styles.districtsTag}>📍 {item.districts?.join(', ')}</Text>
+
       {isMarketplace && (
         <View style={styles.sellerInfo}>
           <Text style={styles.sellerName}>👨‍🌾 {item.seller?.name}</Text>
-          <Text style={styles.districtsTag}>📍 {item.districts?.join(', ')}</Text>
         </View>
       )}
 
@@ -274,6 +323,21 @@ const ProductAdminDashboard = ({ navigation }) => {
 
               {showAddForm && (
                 <View style={styles.formCard}>
+                  <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+                    {newProduct.image ? (
+                      <View style={{ width: '100%', height: '100%' }}>
+                        <Image source={{ uri: newProduct.image }} style={styles.previewImage} />
+                        <TouchableOpacity style={styles.removeImgBtn} onPress={() => setNewProduct({ ...newProduct, image: null })}>
+                          <Text style={styles.removeImgText}>Remove Image</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <View style={styles.placeholderBox}>
+                        <Text style={styles.imagePlaceholderText}>📸 Add Product Image</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+
                   <Text style={styles.label}>{t('productAdmin.productName')}</Text>
                   <TextInput style={styles.input} value={newProduct.name} onChangeText={t => setNewProduct({...newProduct, name: t})} />
                   
@@ -297,8 +361,33 @@ const ProductAdminDashboard = ({ navigation }) => {
                     </View>
                     <View style={{ width: 100 }}>
                       <Text style={styles.label}>{t('productAdmin.unit')}</Text>
-                      <TextInput style={styles.input} value={newProduct.unit} onChangeText={t => setNewProduct({...newProduct, unit: t})} />
+                      <TextInput style={styles.input} value={newProduct.unit} placeholder="e.g. kg/bag" onChangeText={t => setNewProduct({...newProduct, unit: t})} />
                     </View>
+                  </View>
+
+                  <View style={{ marginBottom: 15 }}>
+                    <Text style={styles.label}>Stock / Quantity Available</Text>
+                    <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 20" value={newProduct.stock} onChangeText={t => setNewProduct({...newProduct, stock: t})} />
+                  </View>
+
+                  <Text style={styles.label}>Publishing Districts</Text>
+                  <View style={[styles.districtGrid, { marginBottom: 15 }]}>
+                    {allDistricts.map(d => (
+                      <TouchableOpacity 
+                        key={d} 
+                        style={[styles.districtChip, newProduct.publishingDistricts.includes(d) && styles.activeDistrict]}
+                        onPress={() => {
+                          if (newProduct.publishingDistricts.includes(d)) 
+                            setNewProduct({...newProduct, publishingDistricts: newProduct.publishingDistricts.filter(x => x !== d)});
+                          else 
+                            setNewProduct({...newProduct, publishingDistricts: [...newProduct.publishingDistricts, d]});
+                        }}
+                      >
+                        <Text style={[styles.districtText, newProduct.publishingDistricts.includes(d) && styles.activeDistrictText]}>
+                          {newProduct.publishingDistricts.includes(d) ? '✓ ' : ''}{d}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
 
                   <Text style={styles.label}>{t('productAdmin.description')}</Text>
@@ -525,7 +614,18 @@ const styles = StyleSheet.create({
   receiptTotal: { fontSize: 24, fontWeight: '800', color: '#059669', marginTop: 5 },
   receiptFooter: { fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 25 },
   doneBtn: { marginTop: 25, backgroundColor: '#1e293b', padding: 15, borderRadius: 10, width: '100%', alignItems: 'center' },
-  doneBtnText: { color: '#fff', fontWeight: 'bold' }
+  doneBtnText: { color: '#fff', fontWeight: 'bold' },
+  
+  // New Styles
+  itemImage: { width: 50, height: 50, borderRadius: 8 },
+  itemInfoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
+  stockText: { fontSize: 13, color: '#64748b', fontWeight: '600' },
+  imagePicker: { width: '100%', height: 150, borderRadius: 15, backgroundColor: '#f1f5f9', borderWeight: 1, borderStyle: 'dashed', borderColor: '#cbd5e1', justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
+  previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  placeholderBox: { alignItems: 'center' },
+  imagePlaceholderText: { color: '#94a3b8', fontWeight: 'bold' },
+  removeImgBtn: { position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(239, 68, 68, 0.9)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  removeImgText: { color: '#fff', fontSize: 10, fontWeight: 'bold' }
 });
 
 export default ProductAdminDashboard;

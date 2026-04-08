@@ -30,7 +30,15 @@ const machinerySchema = new mongoose.Schema(
             type: String,
             enum: ["Available", "Maintenance", "Out of Stock"],
             default: "Available"
-        }
+        },
+        image: {
+            type: String, // Base64 string
+            default: null,
+        },
+        description: {
+            type: String,
+            default: "",
+        },
     },
     { timestamps: true }
 );

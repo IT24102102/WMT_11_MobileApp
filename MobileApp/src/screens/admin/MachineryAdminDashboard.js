@@ -11,8 +11,10 @@ import {
   Alert,
   FlatList,
   TextInput,
-  RefreshControl
+  RefreshControl,
+  Image
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import apiClient from '../../api/apiClient';
@@ -34,7 +36,7 @@ const MachineryAdminDashboard = ({ navigation }) => {
   
   // Inventory form states
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newItem, setNewItem] = useState({ name: '', type: 'Tractor', totalCount: '1' });
+  const [newItem, setNewItem] = useState({ name: '', type: 'Tractor', totalCount: '1', image: null, description: '' });
   const [editingId, setEditingId] = useState(null);
   const [editCount, setEditCount] = useState('');
 
@@ -73,6 +75,20 @@ const MachineryAdminDashboard = ({ navigation }) => {
     }
   };
 
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled) {
+      setNewItem({ ...newItem, image: `data:image/jpeg;base64,${result.assets[0].base64}` });
+    }
+  };
+
   const handleAddInventory = async () => {
     if (!newItem.name || !newItem.totalCount) {
       Alert.alert('Error', 'Please fill all fields');
@@ -85,11 +101,11 @@ const MachineryAdminDashboard = ({ navigation }) => {
       });
       Alert.alert('Success', t('machineryAdmin.successAdd'));
       setShowAddForm(false);
-      setNewItem({ name: '', type: 'Tractor', totalCount: '1' });
+      setNewItem({ name: '', type: 'Tractor', totalCount: '1', image: null, description: '' });
       fetchRegionalData();
     } catch (error) {
-      console.error('Error adding inventory:', error);
       Alert.alert('Error', 'Failed to add item');
+    } finally {
     }
   };
 
@@ -203,9 +219,17 @@ const MachineryAdminDashboard = ({ navigation }) => {
   const renderInventoryItem = ({ item }) => (
     <View style={[styles.listItem, { borderLeftWidth: 5, borderLeftColor: '#2e7d32' }]}>
       <View style={styles.listHeader}>
-        <View>
-          <Text style={styles.itemTitle}>{item.name}</Text>
-          <Text style={styles.itemType}>{item.type}</Text>
+        <View style={{ flexDirection: 'row', flex: 1 }}>
+          {item.image && (
+            <Image source={{ uri: item.image }} style={styles.itemImage} />
+          )}
+          <View style={{ marginLeft: item.image ? 12 : 0 }}>
+            <Text style={styles.itemTitle}>{item.name}</Text>
+            <Text style={styles.itemType}>{item.type}</Text>
+            {item.description ? (
+              <Text style={styles.itemDescription} numberOfLines={2}>{item.description}</Text>
+            ) : null}
+          </View>
         </View>
         <TouchableOpacity onPress={() => handleDeleteInventory(item._id)}>
           <Text style={{ fontSize: 18 }}>🗑️</Text>
@@ -325,6 +349,21 @@ const MachineryAdminDashboard = ({ navigation }) => {
               
               {showAddForm && (
                 <View style={styles.addForm}>
+                  <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+                    {newItem.image ? (
+                      <View style={{ width: '100%', height: '100%' }}>
+                        <Image source={{ uri: newItem.image }} style={styles.previewImage} />
+                        <TouchableOpacity style={styles.removeImgBtn} onPress={() => setNewItem({ ...newItem, image: null })}>
+                          <Text style={styles.removeImgText}>Remove</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <View style={styles.placeholderBox}>
+                        <Text style={styles.imagePlaceholderText}>📸 Add Machine Photo</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+
                   <Text style={styles.formLabel}>Name</Text>
                   <TextInput
                     style={styles.input}
@@ -361,6 +400,15 @@ const MachineryAdminDashboard = ({ navigation }) => {
                       />
                     </View>
                   </View>
+
+                  <Text style={styles.formLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.input, { height: 60 }]}
+                    multiline
+                    placeholder="e.g. In good condition, with 4-bottom plough"
+                    value={newItem.description}
+                    onChangeText={(text) => setNewItem({...newItem, description: text})}
+                  />
                   
                   <TouchableOpacity style={styles.submitBtn} onPress={handleAddInventory}>
                     <Text style={styles.submitBtnText}>Add to Inventory</Text>
@@ -504,7 +552,16 @@ const styles = StyleSheet.create({
   
   rentBadge: { backgroundColor: '#eff6ff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   rentBadgeText: { color: '#1e40af', fontSize: 10, fontWeight: 'bold' },
-  emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 40, fontSize: 14 }
+  emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 40, fontSize: 14 },
+
+  imagePicker: { width: '100%', height: 150, borderRadius: 12, backgroundColor: '#fff', borderWeight: 1, borderStyle: 'dashed', borderColor: '#cbd5e1', justifyContent: 'center', alignItems: 'center', marginBottom: 15, overflow: 'hidden' },
+  previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  placeholderBox: { alignItems: 'center' },
+  imagePlaceholderText: { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
+  removeImgBtn: { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(239, 68, 68, 0.8)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15 },
+  removeImgText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  itemImage: { width: 45, height: 45, borderRadius: 8, backgroundColor: '#f1f5f9' },
+  itemDescription: { fontSize: 11, color: '#64748b', fontStyle: 'italic', marginTop: 2, maxWidth: 200 }
 });
 
 export default MachineryAdminDashboard;

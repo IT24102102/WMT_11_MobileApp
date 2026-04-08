@@ -36,6 +36,7 @@ const FinancialAidScreen = ({ navigation }) => {
     loanAmount: '',
     repaymentPeriod: '12',
     purpose: '',
+    otherPurpose: '', // For when 'Other' is selected
     collateral: '',
     termsAccepted: false,
     asc: userInfo?.assignedAsc?._id || userInfo?.assignedAsc || ''
@@ -75,16 +76,33 @@ const FinancialAidScreen = ({ navigation }) => {
     fetchData();
   }, [fetchData]);
 
+  const handleLoanAmountChange = (val) => {
+    let period = '6';
+    const amount = parseInt(val);
+    if (amount <= 25000) period = '6';
+    else if (amount <= 50000) period = '18';
+    else if (amount <= 100000) period = '36';
+    else period = '48';
+    
+    setLoanForm({ ...loanForm, loanAmount: val, repaymentPeriod: period });
+  };
+
   const handleLoanSubmit = async () => {
-    if (!loanForm.loanAmount || !loanForm.purpose || !loanForm.termsAccepted) {
+    const finalPurpose = loanForm.purpose === 'Other' ? loanForm.otherPurpose : loanForm.purpose;
+
+    if (!loanForm.loanAmount || !finalPurpose || !loanForm.termsAccepted) {
       Alert.alert('Error', 'Please fill required fields and accept terms.');
       return;
     }
     setLoading(true);
     try {
-      await apiClient.post('/loans/apply', { ...loanForm, interestRate });
+      await apiClient.post('/loans/apply', { 
+        ...loanForm, 
+        purpose: finalPurpose,
+        interestRate 
+      });
       Alert.alert('Success', 'Loan application submitted successfully!');
-      setLoanForm({ ...loanForm, loanAmount: '', purpose: '', collateral: '', termsAccepted: false });
+      setLoanForm({ ...loanForm, loanAmount: '', purpose: '', otherPurpose: '', collateral: '', termsAccepted: false });
       fetchData();
     } catch (err) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to submit application');
@@ -167,31 +185,29 @@ const FinancialAidScreen = ({ navigation }) => {
               </View>
             )}
 
+            <View style={styles.termsBox}>
+              <Text style={styles.termsBoxTitle}>📄 Terms & Conditions</Text>
+              <Text style={styles.termsBoxText}>
+                If you are unable to pay within the duration, you need to give crop of land for ASC center.
+              </Text>
+            </View>
+
             <View style={styles.infoBox}>
               <Text style={styles.infoText}>Current Interest Rate: <Text style={styles.boldText}>{interestRate}% p.a.</Text></Text>
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Loan Amount (LKR) *</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="e.g. 100000" 
-                keyboardType="numeric"
-                value={loanForm.loanAmount}
-                onChangeText={(val) => setLoanForm({ ...loanForm, loanAmount: val })}
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Repayment Period (Months) *</Text>
-              <View style={styles.chipRow}>
-                {['6', '12', '18', '24'].map(period => (
+              <Text style={styles.label}>Selection Loan Amount (LKR) *</Text>
+              <View style={styles.chipGrid}>
+                {['25000', '50000', '100000', '200000', '300000', '500000'].map(amt => (
                   <TouchableOpacity 
-                    key={period} 
-                    style={[styles.chip, loanForm.repaymentPeriod === period && styles.activeChip]}
-                    onPress={() => setLoanForm({ ...loanForm, repaymentPeriod: period })}
+                    key={amt} 
+                    style={[styles.smallChip, loanForm.loanAmount === amt && styles.activeChip]}
+                    onPress={() => handleLoanAmountChange(amt)}
                   >
-                    <Text style={[styles.chipText, loanForm.repaymentPeriod === period && styles.activeChipText]}>{period}m</Text>
+                    <Text style={[styles.smallChipText, loanForm.loanAmount === amt && styles.activeChipText]}>
+                      {parseInt(amt).toLocaleString()}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -199,18 +215,51 @@ const FinancialAidScreen = ({ navigation }) => {
 
             {loanForm.loanAmount ? (
               <View style={styles.emiBox}>
-                <Text style={styles.emiLabel}>Estimated Monthly Installment (EMI)</Text>
-                <Text style={styles.emiValue}>LKR {calculateEMI()}</Text>
+                <View style={styles.emiRow}>
+                  <View>
+                    <Text style={styles.emiLabel}>Repayment Period</Text>
+                    <Text style={styles.emiValueSmall}>{loanForm.repaymentPeriod} Months</Text>
+                  </View>
+                  <View style={{ alignItems: 'right' }}>
+                    <Text style={styles.emiLabel}>Monthly EMI</Text>
+                    <Text style={styles.emiValueSmall}>LKR {calculateEMI()}</Text>
+                  </View>
+                </View>
               </View>
             ) : null}
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Purpose of Loan *</Text>
+              <View style={[styles.chipGrid, { marginBottom: 10 }]}>
+                {['Purchase Seeds', 'Purchase Fertilizer', 'Purchase Equipment', 'Land Development', 'Livestock Purchase', 'Other'].map(p => (
+                  <TouchableOpacity 
+                    key={p} 
+                    style={[styles.smallChip, loanForm.purpose === p && styles.activeChip]}
+                    onPress={() => setLoanForm({ ...loanForm, purpose: p })}
+                  >
+                    <Text style={[styles.smallChipText, loanForm.purpose === p && styles.activeChipText]}>{p}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {loanForm.purpose === 'Other' && (
+                <TextInput 
+                  style={[styles.input, { height: 50, marginTop: 5 }]} 
+                  placeholder="Please specify purpose..." 
+                  value={loanForm.otherPurpose}
+                  onChangeText={(val) => setLoanForm({ ...loanForm, otherPurpose: val })}
+                />
+              )}
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Collateral Details *</Text>
               <TextInput 
-                style={styles.input} 
-                placeholder="e.g. Buying fertilizer, labor costs" 
-                value={loanForm.purpose}
-                onChangeText={(val) => setLoanForm({ ...loanForm, purpose: val })}
+                style={[styles.input, { height: 60 }]} 
+                placeholder="Describe any assets provided as collateral" 
+                multiline
+                value={loanForm.collateral}
+                onChangeText={(val) => setLoanForm({ ...loanForm, collateral: val })}
               />
             </View>
 
@@ -353,29 +402,62 @@ const styles = StyleSheet.create({
   emiLabel: { fontSize: 12, color: '#558b2f', marginBottom: 5 },
   emiValue: { fontSize: 22, fontWeight: 'bold', color: '#2e7d32' },
   assignedCenterBox: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
     padding: 12,
     borderRadius: 12,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#e2e8f0',
+  },
+  termsBox: {
+    backgroundColor: '#fff7ed',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+  },
+  termsBoxTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#9a3412',
+    marginBottom: 5,
+  },
+  termsBoxText: {
+    fontSize: 12,
+    color: '#9a3412',
+    lineHeight: 18,
   },
   miniLabel: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#999',
+    color: '#94a3b8',
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   centerName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#333',
+    color: '#475569',
   },
   termsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
   termsText: { flex: 1, fontSize: 13, color: '#666', marginLeft: 10 },
   submitBtn: { backgroundColor: '#1b5e20', borderRadius: 12, padding: 16, alignItems: 'center' },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -5 },
+  smallChip: { 
+    backgroundColor: '#f1f5f9', 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    borderRadius: 8, 
+    margin: 5,
+    minWidth: '28%',
+    alignItems: 'center'
+  },
+  smallChipText: { fontSize: 11, color: '#64748b', fontWeight: '500' },
+  emiRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  emiValueSmall: { fontSize: 18, fontWeight: 'bold', color: '#16a34a' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1b5e20', marginBottom: 15 },
   historyCard: { backgroundColor: '#fff', borderRadius: 15, padding: 15, marginBottom: 12, elevation: 2 },
   historyHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },

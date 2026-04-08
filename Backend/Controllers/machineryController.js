@@ -248,7 +248,7 @@ const updateServiceRequestStatus = async (req, res, next) => {
 // @desc    Manage ASC machinery inventory
 const addInventoryItem = async (req, res, next) => {
     try {
-        const { name, type, totalCount } = req.body;
+        const { name, type, totalCount, image, description } = req.body;
         const ascId = req.user.assignedAsc?._id || req.user.assignedAsc;
 
         const item = await Machinery.create({
@@ -256,7 +256,9 @@ const addInventoryItem = async (req, res, next) => {
             type,
             totalCount,
             availableCount: totalCount,
-            asc: ascId
+            asc: ascId,
+            image,
+            description
         });
 
         res.status(201).json({ message: "Machinery added to inventory!", item });

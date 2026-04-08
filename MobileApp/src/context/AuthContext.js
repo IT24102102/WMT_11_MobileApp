@@ -25,10 +25,25 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (e) {
-      console.error("Login Error Object:", e);
-      console.log("Login error data:", e.response?.data);
-      console.log("Login error message:", e.message);
-      return { success: false, error: e.response?.data?.message || e.message || 'Login failed' };
+      console.error("Login Error Detail:", {
+        message: e.message,
+        status: e.response?.status,
+        data: e.response?.data
+      });
+
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (!e.response) {
+        errorMessage = 'Network Error: Cannot reach the server. Please check your internet or tunnel status.';
+      } else if (e.response.status === 502 || e.response.status === 503 || e.response.status === 504) {
+        errorMessage = 'Connection Error: The tunnel or backend is unresponsive. If on Wi-Fi, try using Local IP.';
+      } else if (e.response.data && e.response.data.message) {
+        errorMessage = e.response.data.message;
+      } else {
+        errorMessage = e.message || 'Login failed';
+      }
+
+      return { success: false, error: errorMessage };
     }
   };
 

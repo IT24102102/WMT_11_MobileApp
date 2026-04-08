@@ -60,14 +60,20 @@ const getMyListings = async (req, res, next) => {
 // @route   POST /api/products
 const createProduct = async (req, res, next) => {
     try {
-        const { name, category, description, price, unit, image } = req.body;
+        const { name, category, description, price, unit, image, stock, districts: customDistricts } = req.body;
         const user = req.user;
 
         let districts = [];
-        if (user.role === 'PRODUCT_MANAGER') {
-            districts = user.serviceDistricts;
-        } else if (user.role === 'FARMER') {
-            districts = [user.assignedAsc?.district];
+        if (customDistricts && Array.isArray(customDistricts) && customDistricts.length > 0) {
+            // If user provides specific districts, use them (filtering by service area for Managers if needed)
+            districts = customDistricts.filter(d => d && d.trim());
+        } else {
+            // Default logic
+            if (user.role === 'PRODUCT_MANAGER') {
+                districts = user.serviceDistricts;
+            } else if (user.role === 'FARMER') {
+                districts = [user.assignedAsc?.district];
+            }
         }
 
         if (!districts || districts.length === 0 || !districts[0]) {
@@ -88,6 +94,7 @@ const createProduct = async (req, res, next) => {
             seller: user._id,
             sellerRole: user.role,
             image,
+            stock: Number(stock) || 0,
             status
         });
 
