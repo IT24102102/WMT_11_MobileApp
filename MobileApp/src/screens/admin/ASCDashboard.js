@@ -123,7 +123,7 @@ const ASCDashboard = ({ navigation }) => {
       {activeTab === 'compensations' && (
         <>
           <View style={styles.listHeader}>
-            <Text style={styles.itemTitle}>{item.crop?.cropType}</Text>
+            <Text style={styles.itemTitle}>{item.crop?.cropType} ({item.crop?.landSize} ac)</Text>
             <View style={[styles.statusBadge, { backgroundColor: item.status === 'Approved' ? '#dcfce7' : '#fef3c7' }]}>
               <Text style={[styles.statusText, { color: item.status === 'Approved' ? '#166534' : '#92400e' }]}>{item.status}</Text>
             </View>

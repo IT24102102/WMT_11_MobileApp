@@ -5,17 +5,19 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView, 
-  StatusBar, 
-  TextInput, 
   ActivityIndicator,
   Alert,
   Switch,
-  RefreshControl
+  RefreshControl,
+  Image,
+  StatusBar
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import * as ImagePicker from 'expo-image-picker';
 import apiClient from '../api/apiClient';
+import { Ionicons } from '@expo/vector-icons';
 
 const FinancialAidScreen = ({ navigation }) => {
   const { userInfo } = useContext(AuthContext);
@@ -45,10 +47,12 @@ const FinancialAidScreen = ({ navigation }) => {
   const [compForm, setCompForm] = useState({
     crop: '',
     damageType: '',
+    otherDamageType: '', // For when 'Other' is selected
     incidentDate: '',
     affectedArea: '',
     damageDescription: '',
-    asc: userInfo?.assignedAsc?._id || userInfo?.assignedAsc || ''
+    asc: userInfo?.assignedAsc?._id || userInfo?.assignedAsc || '',
+    images: [] // To store locally picked image URIs
   });
 
   const fetchData = useCallback(async () => {
@@ -112,21 +116,100 @@ const FinancialAidScreen = ({ navigation }) => {
   };
 
   const handleCompSubmit = async () => {
-    if (!compForm.crop || !compForm.damageType || !compForm.incidentDate || !compForm.affectedArea) {
+    let finalDamageType = compForm.damageType === 'Other' ? compForm.otherDamageType : compForm.damageType;
+
+    // Map frontend damage types to backend enum (all lowercase / underscore)
+    const typeMapping = {
+      'Drought': 'drought',
+      'Flood': 'flood',
+      'Elephant Attack': 'elephant_attack',
+      'Animal Attack': 'animal_attack',
+      'Pests / Disease': 'pest',
+      'Wind / Storm': 'storm',
+      'Other': 'other'
+    };
+
+    const backendType = typeMapping[compForm.damageType] || 'other';
+
+    if (!compForm.crop || !finalDamageType || !compForm.incidentDate || !compForm.affectedArea) {
       Alert.alert('Error', 'Please fill all required fields');
       return;
     }
+
     setLoading(true);
     try {
-      await apiClient.post('/compensation', compForm);
+      const formData = new FormData();
+      formData.append('crop', compForm.crop);
+      formData.append('damageType', backendType);
+      
+      // If 'other' was selected, append the actual description as damageType if desired or just description
+      // But based on backend schema, we'll send theMapped backendType
+      formData.append('incidentDate', compForm.incidentDate);
+      formData.append('affectedArea', compForm.affectedArea);
+      formData.append('damageDescription', compForm.damageDescription || finalDamageType);
+      formData.append('asc', compForm.asc);
+
+      // Append images
+      compForm.images.forEach((img, index) => {
+        const filename = img.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image`;
+        formData.append('evidenceFiles', {
+          uri: img,
+          name: filename,
+          type
+        });
+      });
+
+      await apiClient.post('/compensation', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
       Alert.alert('Success', 'Compensation claim submitted successfully!');
-      setCompForm({ ...compForm, crop: '', damageType: '', incidentDate: '', affectedArea: '', damageDescription: '' });
+      setCompForm({ ...compForm, crop: '', damageType: '', otherDamageType: '', incidentDate: '', affectedArea: '', damageDescription: '', images: [] });
       fetchData();
     } catch (err) {
+      console.error('Submission Error:', err);
       Alert.alert('Error', err.response?.data?.message || 'Failed to submit claim');
     } finally {
       setLoading(false);
     }
+  };
+
+  const pickImage = async (useCamera = false) => {
+    if (compForm.images.length >= 5) {
+      Alert.alert('Limit Reached', 'You can only upload up to 5 images.');
+      return;
+    }
+
+    const { status } = await (useCamera 
+      ? ImagePicker.requestCameraPermissionsAsync() 
+      : ImagePicker.requestMediaLibraryPermissionsAsync());
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Camera/Gallery permission is required.');
+      return;
+    }
+
+    const result = await (useCamera ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync)({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setCompForm({ 
+        ...compForm, 
+        images: [...compForm.images, result.assets[0].uri] 
+      });
+    }
+  };
+
+  const removeImage = (uri) => {
+    setCompForm({
+      ...compForm,
+      images: compForm.images.filter(img => img !== uri)
+    });
   };
 
   const calculateEMI = () => {
@@ -150,7 +233,7 @@ const FinancialAidScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -319,7 +402,7 @@ const FinancialAidScreen = ({ navigation }) => {
                     style={[styles.chip, compForm.crop === c._id && styles.activeChip]}
                     onPress={() => setCompForm({ ...compForm, crop: c._id })}
                   >
-                    <Text style={[styles.chipText, compForm.crop === c._id && styles.activeChipText]}>{c.cropType}</Text>
+                    <Text style={[styles.chipText, compForm.crop === c._id && styles.activeChipText]}>{c.cropType} ({c.landSize} Ac)</Text>
                   </TouchableOpacity>
                 ))}
                 {crops.length === 0 && <Text style={styles.infoText}>No crops registered. Please register one first.</Text>}
@@ -328,12 +411,26 @@ const FinancialAidScreen = ({ navigation }) => {
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Damage Type *</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="e.g. Drought, Flood, Wild Elephants" 
-                value={compForm.damageType}
-                onChangeText={(val) => setCompForm({ ...compForm, damageType: val })}
-              />
+              <View style={styles.chipGrid}>
+                {['Drought', 'Flood', 'Elephant Attack', 'Animal Attack', 'Pests / Disease', 'Wind / Storm', 'Other'].map(type => (
+                  <TouchableOpacity 
+                    key={type} 
+                    style={[styles.smallChip, compForm.damageType === type && styles.activeChip]}
+                    onPress={() => setCompForm({ ...compForm, damageType: type })}
+                  >
+                    <Text style={[styles.smallChipText, compForm.damageType === type && styles.activeChipText]}>{type}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {compForm.damageType === 'Other' && (
+                <TextInput 
+                  style={[styles.input, { height: 50, marginTop: 10 }]} 
+                  placeholder="Please specify damage type..." 
+                  value={compForm.otherDamageType}
+                  onChangeText={(val) => setCompForm({ ...compForm, otherDamageType: val })}
+                />
+              )}
             </View>
 
             <View style={styles.formRow}>
@@ -356,6 +453,36 @@ const FinancialAidScreen = ({ navigation }) => {
                 value={compForm.damageDescription}
                 onChangeText={(val) => setCompForm({ ...compForm, damageDescription: val })}
               />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Evidence Photos (Optional)</Text>
+              <View style={styles.imageSection}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagePreviewRow}>
+                  <TouchableOpacity 
+                    style={styles.addImageBox} 
+                    onPress={() => {
+                      Alert.alert('Upload Photo', 'Choose source', [
+                        { text: 'Camera', onPress: () => pickImage(true) },
+                        { text: 'Gallery', onPress: () => pickImage(false) },
+                        { text: 'Cancel', style: 'cancel' }
+                      ]);
+                    }}
+                  >
+                    <Ionicons name="camera-outline" size={30} color="#2e7d32" />
+                    <Text style={styles.addImageText}>Add Photo</Text>
+                  </TouchableOpacity>
+
+                  {compForm.images.map((img, index) => (
+                    <View key={index} style={styles.imageWrapperSmall}>
+                      <Image source={{ uri: img }} style={styles.previewImageSmall} />
+                      <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(img)}>
+                        <Ionicons name="close-circle" size={20} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
             </View>
 
             <TouchableOpacity style={styles.submitBtn} onPress={handleCompSubmit} disabled={loading}>
@@ -386,7 +513,7 @@ const FinancialAidScreen = ({ navigation }) => {
                   <Text style={styles.historyTitle}>{item.damageType}</Text>
                   <Text style={[styles.statusText, { color: item.status === 'APPROVED' ? '#2e7d32' : '#ef6c00' }]}>{item.status}</Text>
                 </View>
-                <Text style={styles.historySub}>Crop: {item.crop?.cropType} ({item.crop?.variety})</Text>
+                <Text style={styles.historySub}>Crop: {item.crop?.cropType} ({item.crop?.variety}) - {item.crop?.landSize} Ac</Text>
                 <Text style={styles.historySub}>Affected: {item.affectedArea} Acres</Text>
               </View>
             ))}
@@ -501,7 +628,25 @@ const styles = StyleSheet.create({
   historyTitle: { fontSize: 16, fontWeight: 'bold', color: '#333' },
   statusText: { fontSize: 12, fontWeight: 'bold' },
   historySub: { fontSize: 13, color: '#666', marginTop: 2 },
-  emptyText: { color: '#999', fontStyle: 'italic', textAlign: 'center', marginTop: 10 }
+  emptyText: { color: '#999', fontStyle: 'italic', textAlign: 'center', marginTop: 10 },
+  imageSection: { marginTop: 5 },
+  imagePreviewRow: { flexDirection: 'row' },
+  addImageBox: { 
+    width: 80, 
+    height: 80, 
+    borderRadius: 12, 
+    backgroundColor: '#f0fdf4', 
+    borderWidth: 1, 
+    borderColor: '#bbf7d0', 
+    borderStyle: 'dashed',
+    justifyContent: 'center', 
+    alignItems: 'center',
+    marginRight: 10
+  },
+  addImageText: { fontSize: 10, color: '#16a34a', fontWeight: 'bold', marginTop: 2 },
+  imageWrapperSmall: { width: 80, height: 80, borderRadius: 12, marginRight: 10, position: 'relative' },
+  previewImageSmall: { width: '100%', height: '100%', borderRadius: 12 },
+  removeImageBtn: { position: 'absolute', top: -5, right: -5, backgroundColor: '#fff', borderRadius: 10 }
 });
 
 export default FinancialAidScreen;

@@ -7,7 +7,7 @@ import UniversalStorage from '../utils/UniversalStorage';
 const LOCAL_IP = '192.168.1.6'; // Replace with your current local IP if needed
 // I have switched to localtunnel for better reliability in this session:
 // Primary Tunnel (Serveo with Heartbeats):
-const TUNNEL_URL = 'https://6267aa3d068452b2-112-134-185-189.serveousercontent.com';
+const TUNNEL_URL = 'https://mean-cycles-vanish.loca.lt';
 // Backup Tunnel (Localtunnel):
 const BACKUP_URL = 'https://fluffy-waves-hug.loca.lt';
 

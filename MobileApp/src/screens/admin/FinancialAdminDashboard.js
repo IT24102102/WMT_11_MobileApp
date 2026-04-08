@@ -299,7 +299,7 @@ const FinancialAdminDashboard = ({ navigation }) => {
                       <View style={styles.listHeader}>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.itemTitle}>{item.farmer?.name}</Text>
-                          <Text style={styles.itemSubtitle}>{item.crop?.cropType} - {item.crop?.variety}</Text>
+                          <Text style={styles.itemSubtitle}>{item.crop?.cropType} ({item.crop?.landSize} ac) - {item.crop?.variety}</Text>
                         </View>
                         <View style={[styles.statusBadge, { backgroundColor: item.status === 'APPROVED' ? '#dcfce7' : '#fef3c7' }]}>
                           <Text style={[styles.statusText, { color: item.status === 'APPROVED' ? '#166534' : '#92400e' }]}>{item.status}</Text>
@@ -387,7 +387,7 @@ const FinancialAdminDashboard = ({ navigation }) => {
             <ScrollView>
               <View style={styles.claimInfo}>
                 <Text style={styles.modalLabel}>Farmer: <Text style={styles.modalValue}>{selectedClaim?.farmer?.name}</Text></Text>
-                <Text style={styles.modalLabel}>Crop: <Text style={styles.modalValue}>{selectedClaim?.crop?.cropType}</Text></Text>
+                <Text style={styles.modalLabel}>Crop: <Text style={styles.modalValue}>{selectedClaim?.crop?.cropType} ({selectedClaim?.crop?.landSize} ac)</Text></Text>
                 <Text style={styles.modalLabel}>Damage: <Text style={styles.modalValue}>{selectedClaim?.damageType}</Text></Text>
                 <Text style={styles.modalLabel}>Description: <Text style={styles.modalValue}>{selectedClaim?.damageDescription}</Text></Text>
               </View>

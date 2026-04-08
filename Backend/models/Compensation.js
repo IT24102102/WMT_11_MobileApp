@@ -15,7 +15,7 @@ const compensationSchema = new mongoose.Schema(
         damageType: {
             type: String,
             required: true,
-            enum: ["flood", "drought", "pest", "disease", "wildlife", "storm", "other"]
+            enum: ["flood", "drought", "pest", "disease", "wildlife", "storm", "elephant_attack", "animal_attack", "other"]
         },
         incidentDate: {
             type: Date,

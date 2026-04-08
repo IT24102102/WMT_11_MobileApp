@@ -5,15 +5,15 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView, 
-  StatusBar, 
-  TextInput, 
   ActivityIndicator,
   Alert,
   FlatList,
   RefreshControl,
-  Image
+  Image,
+  StatusBar,
+  TextInput
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
@@ -34,6 +34,7 @@ const SellHarvestScreen = ({ navigation }) => {
     description: '',
     price: '',
     unit: '',
+    stock: '', // New field for quantity
     image: ''
   });
 
@@ -66,9 +67,12 @@ const SellHarvestScreen = ({ navigation }) => {
     }
     setLoading(true);
     try {
-      await apiClient.post('/products', form);
+      await apiClient.post('/products', {
+        ...form,
+        stock: Number(form.stock) || 0
+      });
       Alert.alert('Success', 'Harvest listed successfully!');
-      setForm({ name: '', category: 'Other', description: '', price: '', unit: '', image: '' });
+      setForm({ name: '', category: 'Other', description: '', price: '', unit: '', stock: '', image: '' });
       setActiveTab('MY_LISTINGS');
     } catch (err) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to list harvest');
@@ -130,7 +134,7 @@ const SellHarvestScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -197,7 +201,7 @@ const SellHarvestScreen = ({ navigation }) => {
             </ScrollView>
 
             <View style={styles.row}>
-              <View style={{ flex: 2, marginRight: 10 }}>
+              <View style={{ flex: 1, marginRight: 10 }}>
                 <Text style={styles.formLabel}>Price (LKR) *</Text>
                 <TextInput 
                   style={styles.input} 
@@ -205,6 +209,16 @@ const SellHarvestScreen = ({ navigation }) => {
                   keyboardType="numeric"
                   value={form.price}
                   onChangeText={(val) => setForm({ ...form, price: val })}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.formLabel}>Quantity / Stock *</Text>
+                <TextInput 
+                  style={styles.input} 
+                  placeholder="e.g. 100" 
+                  keyboardType="numeric"
+                  value={form.stock}
+                  onChangeText={(val) => setForm({ ...form, stock: val })}
                 />
               </View>
             </View>
