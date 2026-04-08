@@ -7,18 +7,11 @@ import UniversalStorage from '../utils/UniversalStorage';
 const LOCAL_IP = '192.168.1.6'; // Replace with your current local IP if needed
 // I have switched to localtunnel for better reliability in this session:
 // Primary Tunnel (Serveo with Heartbeats):
-const TUNNEL_URL = 'https://mean-cycles-vanish.loca.lt';
-// Backup Tunnel (Localtunnel):
-const BACKUP_URL = 'https://fluffy-waves-hug.loca.lt';
+const RAILWAY_URL = 'https://wmt11mobileapp-production.up.railway.app';
 
 const apiClient = axios.create({
-  // Choice A: Local Wifi (STABLE - RECOMMENDED)
-  // baseURL: `http://${LOCAL_IP}:5000/api`, 
-
-  // Choice B: Public Tunnel (RESTORED - VERIFIED 200 OK)
-  baseURL: `${TUNNEL_URL}/api`,
-  // If Choice B fails, uncomment Choice C below:
-  // baseURL: `${BACKUP_URL}/api`,
+  // Permanent Cloud Host (Railway):
+  baseURL: `${RAILWAY_URL}/api`,
 
   headers: {
     'Content-Type': 'application/json',
