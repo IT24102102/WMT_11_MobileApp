@@ -27,8 +27,8 @@ const RegionalReports = ({ navigation }) => {
     try {
       setLoading(true);
       const url = district === 'All' 
-        ? '/admin/analytics' 
-        : `/admin/analytics?district=${district}`;
+        ? '/analytics/analytics' 
+        : `/analytics/analytics?district=${district}`;
       
       const response = await apiClient.get(url);
       if (response.data.success) {
@@ -119,9 +119,11 @@ const RegionalReports = ({ navigation }) => {
               {selectedDistrict === 'All' ? 'Users by District' : `Users in ${selectedDistrict} by Role`}
             </Text>
             <View style={styles.barList}>
-              {analytics.userDistribution.map(item => {
-                const label = selectedDistrict === 'All' ? item.district : item.role.replace('_', ' ');
-                return renderProgressBar(label, item.count, Math.max(...analytics.userDistribution.map(d => d.count)), '#3b82f6');
+              {analytics.userDistribution.map((item, idx) => {
+                const label = selectedDistrict === 'All' 
+                  ? (item.district || 'Unknown') 
+                  : (item.role ? String(item.role).replace('_', ' ') : 'Unknown');
+                return renderProgressBar(label || `Unknown-${idx}`, item.count, Math.max(...analytics.userDistribution.map(d => d.count)), '#3b82f6');
               })}
             </View>
           </View>

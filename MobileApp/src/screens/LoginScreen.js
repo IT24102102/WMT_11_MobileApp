@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, ImageBackground } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -35,22 +35,14 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <ImageBackground 
+      source={require('../../assets/images/hero.png')} 
+      style={styles.container}
+      resizeMode="cover"
+    >
       <View style={styles.card}>
         <Text style={styles.title}>AgroLanka</Text>
         <Text style={styles.subtitle}>Welcome back! Please login.</Text>
-        <Text style={{ fontSize: 10, color: 'blue', textAlign: 'center', marginBottom: 5 }}>
-          Debug IP: http://192.168.1.6:5000/api
-        </Text>
-        
-        <TouchableOpacity 
-          style={{ marginBottom: 20, padding: 5, backgroundColor: '#eee', borderRadius: 5 }} 
-          onPress={() => navigation.navigate('ASCDashboard')}
-        >
-          <Text style={{ fontSize: 10, color: '#666', textAlign: 'center' }}>
-            [DEV ONLY] Tap to Check Admin Dashboard
-          </Text>
-        </TouchableOpacity>
 
         <TextInput
           style={styles.input}
@@ -101,7 +93,7 @@ const LoginScreen = ({ navigation }) => {
           <Text style={[styles.linkText, { marginTop: 10 }]}>Don't have an account? Register</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ImageBackground>
   );
 };
 
@@ -110,7 +102,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#f5f5f5',
   },
   card: {
     backgroundColor: '#fff',

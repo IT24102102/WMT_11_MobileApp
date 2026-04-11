@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Modal, TextInput, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Modal, TextInput, FlatList, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -74,9 +74,14 @@ const FarmerDashboard = ({ navigation }) => {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ImageBackground 
+      source={require('../../assets/images/hero.png')} 
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <StatusBar barStyle="dark-content" />
+        <ScrollView contentContainerStyle={styles.scrollContent}>
         
         {/* Header Section */}
         <View style={styles.header}>
@@ -235,14 +240,17 @@ const FarmerDashboard = ({ navigation }) => {
         </View>
 
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   scrollContent: {
     padding: 20,
