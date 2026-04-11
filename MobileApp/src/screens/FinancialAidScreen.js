@@ -10,7 +10,9 @@ import {
   Switch,
   RefreshControl,
   Image,
-  StatusBar
+  StatusBar,
+  TextInput,
+  ImageBackground
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
@@ -233,8 +235,13 @@ const FinancialAidScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" />
+    <ImageBackground 
+      source={require('../../assets/images/hero.png')} 
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← Back</Text>
@@ -521,12 +528,16 @@ const FinancialAidScreen = ({ navigation }) => {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  background: {
+    flex: 1,
+  },
+  container: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#fff' },
   backBtnText: { color: '#2e7d32', fontWeight: 'bold' },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#1b5e20' },

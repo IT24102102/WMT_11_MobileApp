@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   backBtnText: { color: '#3b82f6', fontWeight: 'bold' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
   
-  listItem: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 10, borderWeight: 1, borderColor: '#e2e8f0' },
+  listItem: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: '#e2e8f0' },
   listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 5 },
   itemTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b' },
   itemSubtitle: { fontSize: 14, color: '#444', marginBottom: 4 },
