@@ -10,7 +10,7 @@ const FeaturePlaceholderScreen = ({ route, navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtn}>← {t('common.back') || 'Back'}</Text>
+          <Text style={styles.backBtn}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{title}</Text>
         <View style={{ width: 50 }} />

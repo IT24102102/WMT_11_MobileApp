@@ -126,9 +126,11 @@ const MyCropsScreen = ({ navigation }) => {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>← {t('dashboard.welcome')}</Text>
-        </TouchableOpacity>
+        {navigation.canGoBack() ? (
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Text style={styles.backBtnText}>← Back</Text>
+          </TouchableOpacity>
+        ) : <View style={{ width: 40 }} />}
         <Text style={styles.headerTitle}>{t('farmer_crop.headerList')}</Text>
         <TouchableOpacity onPress={() => navigation.navigate('RegisterCrop')} style={styles.addBtn}>
            <Text style={styles.addBtnText}>+</Text>

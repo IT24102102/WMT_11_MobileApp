@@ -8,6 +8,7 @@ import LandingScreen from '../screens/LandingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import FarmerDashboard from '../screens/FarmerDashboard';
+import FarmerTabNavigator from './FarmerTabNavigator';
 import AdminDashboard from '../screens/AdminDashboard';
 import HomeScreen from '../screens/HomeScreen';
 import FeaturePlaceholderScreen from '../screens/FeaturePlaceholderScreen';
@@ -85,7 +86,7 @@ const AppNavigator = () => {
             ) : userInfo?.role === 'CROP_OFFICER' ? (
               <Stack.Screen name="Home" component={CropDashboard} />
             ) : (
-              <Stack.Screen name="Home" component={FarmerDashboard} />
+              <Stack.Screen name="Home" component={FarmerTabNavigator} />
             )}
             <Stack.Screen name="MachineryAdmin" component={MachineryAdminDashboard} />
             <Stack.Screen name="ProductAdmin" component={ProductAdminDashboard} />

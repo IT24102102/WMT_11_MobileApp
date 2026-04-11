@@ -1,16 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, ScrollView, ImageBackground } from 'react-native';
 import { useLanguage } from '../context/LanguageContext';
 
 const LeafDiagnosticScreen = ({ navigation }) => {
   const { t } = useLanguage();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ImageBackground 
+      source={require('../../assets/images/hero.png')} 
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtn}>← {t('common.back') || 'Back'}</Text>
+            <Text style={styles.backBtn}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('farmer.leafDiagnostic')}</Text>
           <View style={{ width: 50 }} />
@@ -38,12 +43,16 @@ const LeafDiagnosticScreen = ({ navigation }) => {
           <Text style={styles.infoText}>Ensure the leaf is well-lit and the camera is in focus. Avoid shadows and complex backgrounds.</Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  background: {
+    flex: 1,
+  },
+  container: { flex: 1 },
   scrollContent: { paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
   backBtn: { fontSize: 16, color: '#2e7d32', fontWeight: 'bold' },

@@ -1,75 +1,20 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Modal, TextInput, FlatList, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, FlatList, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import apiClient from '../api/apiClient';
 
 const FarmerDashboard = ({ navigation }) => {
-  const { userInfo, updateUserInfo, logout } = useContext(AuthContext);
-  const { t, language, switchLanguage } = useLanguage();
-
-  const [ascs, setAscs] = React.useState([]);
-  const [districts, setDistricts] = React.useState([]);
-  const [selectedDistrict, setSelectedDistrict] = React.useState('');
-  const [selectedAsc, setSelectedAsc] = React.useState('');
-  const [isEditingAsc, setIsEditingAsc] = React.useState(false);
-  const [isEditingPhone, setIsEditingPhone] = React.useState(false);
-  const [newPhone, setNewPhone] = React.useState(userInfo?.phone || '');
-  const [saving, setSaving] = React.useState(false);
-
-  React.useEffect(() => {
-    const fetchAscs = async () => {
-      try {
-        const response = await apiClient.get('/ascs');
-        setAscs(response.data);
-        const uniqueDistricts = [...new Set(response.data.map(asc => asc.district))].sort();
-        setDistricts(uniqueDistricts);
-      } catch (err) {
-        console.error('Error fetching ASCs:', err);
-      }
-    };
-    fetchAscs();
-  }, []);
-
-  const handleUpdateAsc = async () => {
-    if (!selectedAsc) return;
-    setSaving(true);
-    try {
-      const response = await apiClient.put('/auth/update-asc', { assignedAsc: selectedAsc });
-      if (response.status === 200) {
-        updateUserInfo(response.data);
-        setIsEditingAsc(false);
-      }
-    } catch (err) {
-      console.error('Error updating ASC:', err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleUpdateProfile = async () => {
-    setSaving(true);
-    try {
-      const response = await apiClient.put('/auth/update-profile', { phone: newPhone });
-      if (response.status === 200) {
-        updateUserInfo(response.data);
-        setIsEditingPhone(false);
-      }
-    } catch (err) {
-      console.error('Error updating profile:', err);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const { userInfo } = useContext(AuthContext);
+  const { t } = useLanguage();
 
   const menuItems = [
     { id: 'crop', title: t('farmer_crop.title'), desc: t('farmer.registerCropDesc'), icon: '🌱', color: '#4caf50', screen: 'RegisterCrop' },
-    { id: 'mycrops', title: t('farmer_crop.headerList'), desc: t('farmer.yourCropsDesc'), icon: '🌾', color: '#81c784', screen: 'MyCrops' },
+    { id: 'mycrops', title: t('farmer_crop.headerList'), desc: t('farmer.yourCropsDesc'), icon: '🌾', color: '#81c784', screen: 'MyCropsTab' },
     { id: 'finance', title: t('farmer.financialAid'), desc: t('farmer.financialAidDesc'), icon: '💰', color: '#ff9800', screen: 'FinancialAid' },
     { id: 'machinery', title: t('farmer.machineryHub'), desc: t('farmer.machineryHubDesc'), icon: '🚜', color: '#2196f3', screen: 'MachineryHub' },
-    { id: 'products', title: t('farmer.agriProducts'), desc: t('farmer.agriProductsDesc'), icon: '🛒', color: '#9c27b0', screen: 'AgriProducts' },
-    { id: 'harvest', title: t('farmer.sellHarvest'), desc: t('farmer.sellHarvestDesc'), icon: '📈', color: '#f44336', screen: 'SellHarvest' },
+    { id: 'products', title: t('farmer.agriProducts'), desc: t('farmer.agriProductsDesc'), icon: '🛒', color: '#9c27b0', screen: 'BuyTab' },
+    { id: 'harvest', title: t('farmer.sellHarvest'), desc: t('farmer.sellHarvestDesc'), icon: '📈', color: '#f44336', screen: 'SellTab' },
     { id: 'ai', title: t('farmer.leafDiagnostic'), desc: t('farmer.leafDiagnosticDesc'), icon: '🔍', color: '#00bcd4', screen: 'LeafDiagnostic' },
   ];
 
@@ -90,137 +35,7 @@ const FarmerDashboard = ({ navigation }) => {
             <Text style={styles.userName} numberOfLines={1}>{userInfo?.name || 'Farmer'}! 🌾</Text>
             <Text style={styles.subtitle} numberOfLines={2}>{t('farmer.manageActivities')}</Text>
           </View>
-          <View style={styles.headerActions}>
-            {/* Language Toggle */}
-            <View style={styles.langToggle}>
-              <TouchableOpacity
-                style={[styles.langBtn, language === 'en' && styles.langBtnActive]}
-                onPress={() => switchLanguage('en')}
-              >
-                <Text style={[styles.langBtnText, language === 'en' && styles.langBtnTextActive]}>En</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.langBtn, language === 'si' && styles.langBtnActive]}
-                onPress={() => switchLanguage('si')}
-              >
-                <Text style={[styles.langBtnText, language === 'si' && styles.langBtnTextActive]}>සිං</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-              <Text style={styles.logoutText}>{t('dashboard.logout')}</Text>
-            </TouchableOpacity>
-          </View>
         </View>
-
-        {/* Profile Status Cards */}
-        <View style={styles.statusRow}>
-          <TouchableOpacity style={styles.statusCard} onPress={() => setIsEditingAsc(true)}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.statusLabel} numberOfLines={2}>{t('farmer.yourCenter')}</Text>
-              <Text style={styles.editLink}>{t('farmer.change')}</Text>
-            </View>
-            <Text style={styles.statusValue}>📍 {userInfo?.assignedAsc?.name || t('farmer.noCenter')}</Text>
-            {userInfo?.assignedAsc && <Text style={styles.statusSubValue}>{userInfo.assignedAsc.district} {t('auth.district')}</Text>}
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.statusCard} onPress={() => setIsEditingPhone(true)}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.statusLabel} numberOfLines={2}>{t('farmer.phoneNumber')}</Text>
-              <Text style={styles.editLink}>{t('farmer.edit')}</Text>
-            </View>
-            <Text style={styles.statusValue}>📞 {userInfo?.phone || 'Not added'}</Text>
-            <Text style={styles.statusSubValue}>{t('farmer.primaryContact')}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ASC Selection Modal */}
-        <Modal visible={isEditingAsc} animationType="slide" transparent={true}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{t('farmer.selectNewCenter')}</Text>
-              
-              <Text style={styles.selectLabel}>{t('auth.district')}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipContainer}>
-                {districts.map(d => (
-                  <TouchableOpacity 
-                    key={d} 
-                    style={[styles.chip, selectedDistrict === d && styles.activeChip]}
-                    onPress={() => setSelectedDistrict(d)}
-                  >
-                    <Text style={[styles.chipText, selectedDistrict === d && styles.activeChipText]}>{d}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              <Text style={styles.selectLabel}>{selectedDistrict ? `${t('auth.asc')} in ${selectedDistrict}` : t('auth.asc')}</Text>
-              <View style={styles.horizontalScrollWrapper}>
-                {selectedDistrict ? (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChipsContent}>
-                    {ascs.filter(a => a.district === selectedDistrict).map(a => (
-                      <TouchableOpacity 
-                        key={a._id} 
-                        style={[styles.chip, selectedAsc === a._id && styles.activeChip]}
-                        onPress={() => setSelectedAsc(a._id)}
-                      >
-                        <Text style={[styles.chipText, selectedAsc === a._id && styles.activeChipText]}>
-                          {selectedAsc === a._id ? '✅ ' : '📍 '}{a.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                    {ascs.filter(a => a.district === selectedDistrict).length === 0 && (
-                      <Text style={styles.emptyText}>No centers found</Text>
-                    )}
-                  </ScrollView>
-                ) : (
-                  <View style={styles.emptySelection}>
-                    <Text style={styles.emptySelectionText}>Please select a district first</Text>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity 
-                  style={[styles.modalBtn, styles.saveBtn, (!selectedAsc || saving) && styles.disabledBtn]} 
-                  onPress={handleUpdateAsc}
-                  disabled={!selectedAsc || saving}
-                >
-                  <Text style={styles.btnText}>{saving ? '...' : t('common.save')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => setIsEditingAsc(false)}>
-                  <Text style={styles.btnText}>{t('common.cancel')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        {/* Phone Editing Modal */}
-        <Modal visible={isEditingPhone} animationType="fade" transparent={true}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{t('farmer.updatePhone')}</Text>
-              <TextInput
-                style={styles.input}
-                value={newPhone}
-                onChangeText={setNewPhone}
-                placeholder={t('farmer.enterPhone')}
-                keyboardType="phone-pad"
-              />
-              <View style={styles.modalButtons}>
-                <TouchableOpacity 
-                  style={[styles.modalBtn, styles.saveBtn, saving && styles.disabledBtn]} 
-                  onPress={handleUpdateProfile}
-                  disabled={saving}
-                >
-                  <Text style={styles.btnText}>{saving ? '...' : t('common.save')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => setIsEditingPhone(false)}>
-                  <Text style={styles.btnText}>{t('common.cancel')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
 
         {/* Dashboard Grid */}
         <View style={styles.grid}>

@@ -109,9 +109,11 @@ const AgriProductsScreen = ({ navigation }) => {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>← Back</Text>
-        </TouchableOpacity>
+        {navigation.canGoBack() ? (
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Text style={styles.backBtnText}>← Back</Text>
+          </TouchableOpacity>
+        ) : <View style={{ width: 40 }} />}
         <Text style={styles.headerTitle}>{t('farmer.agriProducts')}</Text>
         <View style={{ width: 40 }} />
       </View>
