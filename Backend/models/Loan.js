@@ -1,3 +1,4 @@
+// Import mongoose library to define schema and interact with MongoDB
 const mongoose = require("mongoose");
 
 const loanSchema = new mongoose.Schema({
@@ -7,13 +8,13 @@ const loanSchema = new mongoose.Schema({
         required: true
     },
     amount: {
-        type: Number,
+        type: Number, // Loan amount requested
         required: true
     },
     repaymentPeriod: {
         type: Number,
         required: true
-    }, // in months
+    }, //Repayment period in months
     interestRate: {
         type: Number,
         required: true
