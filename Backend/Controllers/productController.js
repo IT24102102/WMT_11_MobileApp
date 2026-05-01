@@ -25,22 +25,16 @@ const getAvailableProducts = async (req, res, next) => {
 
         console.log(`[AVAILABILITY_DEBUG] User: ${user.email} | Districts: [${targetDistricts}]`);
 
-        // BUILD QUERY
+        // BUILD QUERY - TEMPORARILY REMOVING DISTRICT FILTER TO DEBUG
         let query = { status: "Active" };
         
-        if (targetDistricts.length > 0) {
-            // Case-insensitive regex match for ANY of the target districts
-            query.districts = { 
-                $in: targetDistricts.map(d => new RegExp(d, 'i')) 
-            };
-        }
-
-        // Blind search just to check DB connectivity and content
-        const allActive = await Product.find({ status: "Active" }).limit(5).lean();
-        console.log(`[AVAILABILITY_DEBUG] Sample Active Products in DB: ${allActive.map(p => p.name + "(" + p.districts + ")").join(', ')}`);
+        // Log total products in DB regardless of anything
+        const totalInDB = await Product.countDocuments({});
+        const totalActiveInDB = await Product.countDocuments({ status: "Active" });
+        console.log(`[AVAILABILITY_DEBUG] Total in DB: ${totalInDB} | Total Active: ${totalActiveInDB}`);
 
         const products = await Product.find(query).populate("seller", "name email phone");
-        console.log(`[AVAILABILITY_DEBUG] Matching Products Found: ${products.length} for districts ${targetDistricts}`);
+        console.log(`[AVAILABILITY_DEBUG] Returning ${products.length} products to frontend.`);
 
         res.json(products);
     } catch (error) {
