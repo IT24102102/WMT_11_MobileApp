@@ -48,7 +48,7 @@ const getAvailableProducts = async (req, res, next) => {
             };
         }
 
-        console.log(`[ProductAPI] Final MongoDB Query:`, JSON.stringify(query));
+        console.log(`[ProductAPI] Final MongoDB Query for ${user.email}:`, JSON.stringify(query));
 
         const products = await Product.find(query)
             .populate("seller", "name email phone")
