@@ -79,6 +79,9 @@ export const translations = {
             emptyList: "No crops registered yet.",
             createNew: "Register New",
             submitRequest: "Submit Request",
+            uploadLandDoc: "Upload Land Document (Image)",
+            landDocLabel: "Land Ownership Proof",
+            selectFile: "Select File",
         },
         auth: {
             district: "District",
@@ -310,6 +313,9 @@ export const translations = {
             emptyList: "තවමත් බෝග ලියාපදිංචි කර නොමැත.",
             createNew: "නව ලියාපදිංචිය",
             submitRequest: "ඉල්ලීම ඉදිරිපත් කරන්න",
+            uploadLandDoc: "ඉඩම් ලේඛනය උඩුගත කරන්න (ඡායාරූප)",
+            landDocLabel: "ඉඩම් අයිතිය පිළිබඳ සාක්ෂි",
+            selectFile: "ගොනුව තෝරන්න",
         },
         auth: {
             district: "දිස්ත්‍රික්කය",

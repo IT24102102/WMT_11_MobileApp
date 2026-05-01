@@ -38,7 +38,8 @@ const registerCrop = async (req, res, next) => {
             location,
             soilType,
             assignedAsc,
-            season: season || "N/A"
+            season: season || "N/A",
+            landDocument: req.file ? req.file.path : null
         });
 
         res.status(201).json({

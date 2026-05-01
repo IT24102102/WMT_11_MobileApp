@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import apiClient from '../../api/apiClient';
+import apiClient, { REPLIT_URL } from '../../api/apiClient';
 
 const { width } = Dimensions.get('window');
 
@@ -352,7 +352,7 @@ const FinancialAdminDashboard = ({ navigation }) => {
               <Text style={styles.proofTitle}>{t('finance.bankSlip')}</Text>
               {selectedRepayment?.receiptImage ? (
                 <Image 
-                  source={{ uri: `http://localhost:5000/${selectedRepayment.receiptImage.replace(/\\/g, '/')}` }}
+                  source={{ uri: `${REPLIT_URL}/${selectedRepayment.receiptImage.replace(/\\/g, '/')}` }}
                   style={styles.proofImage}
                   resizeMode="contain"
                 />

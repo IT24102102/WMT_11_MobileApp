@@ -7,7 +7,7 @@ import UniversalStorage from '../utils/UniversalStorage';
 const LOCAL_IP = '192.168.1.6'; // Replace with your current local IP if needed
 
 // 🚀 Replit Hosting:
-const REPLIT_URL = 'https://wmt-11-mobile-app--it24102102.replit.app';
+export const REPLIT_URL = 'https://wmt-11-mobile-app--it24102102.replit.app';
 
 const apiClient = axios.create({
   // Permanent Cloud Host (Replit):

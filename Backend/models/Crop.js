@@ -49,6 +49,10 @@ const cropSchema = new mongoose.Schema(
             type: String,
             enum: ["PENDING", "APPROVED", "REJECTED"],
             default: "PENDING"
+        },
+        landDocument: {
+            type: String, // Path to uploaded land document
+            required: false // Optional for now, but recommended
         }
     },
     { timestamps: true }

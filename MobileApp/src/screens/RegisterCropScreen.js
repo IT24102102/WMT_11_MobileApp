@@ -10,8 +10,10 @@ import {
   TextInput, 
   ActivityIndicator,
   Alert,
-  ImageBackground
+  ImageBackground,
+  Image
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import apiClient from '../api/apiClient';
@@ -41,6 +43,7 @@ const RegisterCropScreen = ({ navigation }) => {
   const [districts, setDistricts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchingAscs, setFetchingAscs] = useState(false);
+  const [landDoc, setLandDoc] = useState(null);
 
   // Synchronize formData with userInfo once it's available (handles async load)
   useEffect(() => {
@@ -81,6 +84,18 @@ const RegisterCropScreen = ({ navigation }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setLandDoc(result.assets[0]);
+    }
+  };
+
   const handleSubmit = async () => {
     // Basic Required Fields Validation
     const requiredFields = [
@@ -112,7 +127,32 @@ const RegisterCropScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await apiClient.post('/crops', formData);
+      // Use FormData for multipart/form-data upload
+      const data = new FormData();
+      
+      // Append text fields
+      Object.keys(formData).forEach(key => {
+        data.append(key, formData[key]);
+      });
+
+      // Append image if selected
+      if (landDoc) {
+        const uriParts = landDoc.uri.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        
+        data.append('landDocument', {
+          uri: landDoc.uri,
+          name: `land_doc_${Date.now()}.${fileType}`,
+          type: `image/${fileType}`,
+        });
+      }
+
+      const response = await apiClient.post('/crops', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
       if (response.status === 201) {
         Alert.alert(
           'Success',
@@ -346,6 +386,26 @@ const RegisterCropScreen = ({ navigation }) => {
             </>
           )}
 
+          {/* Land Document Upload */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>{t('farmer_crop.landDocLabel')}</Text>
+            <TouchableOpacity style={styles.uploadArea} onPress={pickImage}>
+              {landDoc ? (
+                <View style={styles.previewContainer}>
+                  <Image source={{ uri: landDoc.uri }} style={styles.previewImage} />
+                  <View style={styles.changeOverlay}>
+                    <Text style={styles.changeText}>{t('farmer.change')}</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.uploadPlaceholder}>
+                  <Text style={styles.uploadIcon}>📄</Text>
+                  <Text style={styles.uploadText}>{t('farmer_crop.uploadLandDoc')}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity 
             style={[styles.submitBtn, loading && styles.disabledBtn]} 
             onPress={handleSubmit}
@@ -472,6 +532,51 @@ const styles = StyleSheet.create({
     borderColor: '#eee',
   },
   supportNote: { fontSize: 11, color: '#888', marginTop: 5 },
+  uploadArea: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    borderStyle: 'dashed',
+    height: 150,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadPlaceholder: {
+    alignItems: 'center',
+  },
+  uploadIcon: {
+    fontSize: 30,
+    marginBottom: 5,
+  },
+  uploadText: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  previewContainer: {
+    width: '100%',
+    height: '100%',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  changeOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 5,
+    alignItems: 'center',
+  },
+  changeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   submitBtn: {
     backgroundColor: '#1b5e20',
     borderRadius: 12,
