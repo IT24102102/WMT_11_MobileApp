@@ -17,11 +17,14 @@ const getAvailableProducts = async (req, res, next) => {
                 district = populatedUser.assignedAsc?.district;
             }
 
-            if (district) {
-                // EXACT WEB APP LOGIC: Show items listed by Product Managers in their district
+                // EXACT WEB APP LOGIC + LEGACY FALLBACK:
+                // Show items listed by Product Managers, including those missing the sellerRole field
                 query = {
                     ...query,
-                    sellerRole: 'PRODUCT_MANAGER',
+                    $or: [
+                        { sellerRole: 'PRODUCT_MANAGER' },
+                        { sellerRole: { $exists: false } }
+                    ],
                     districts: { 
                         $in: [
                             district, 
@@ -32,10 +35,13 @@ const getAvailableProducts = async (req, res, next) => {
                     }
                 };
             } else {
-                // Fallback from Web App: Show all PM products
+                // Fallback from Web App: Show all PM products (including legacy)
                 query = {
                     ...query,
-                    sellerRole: 'PRODUCT_MANAGER'
+                    $or: [
+                        { sellerRole: 'PRODUCT_MANAGER' },
+                        { sellerRole: { $exists: false } }
+                    ]
                 };
             }
         } else if (user.role === 'PRODUCT_MANAGER') {
