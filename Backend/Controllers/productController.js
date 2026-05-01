@@ -17,22 +17,15 @@ const getAvailableProducts = async (req, res, next) => {
                 district = populatedUser.assignedAsc?.district;
             }
 
-                // EXACT WEB APP LOGIC + LEGACY FALLBACK:
-                // Show items listed by Product Managers, including those missing the sellerRole field
+                // FIXED DISTRICT QUERY:
+                // Use a direct regex for case-insensitive matching on the districts array
                 query = {
                     ...query,
                     $or: [
                         { sellerRole: 'PRODUCT_MANAGER' },
                         { sellerRole: { $exists: false } }
                     ],
-                    districts: { 
-                        $in: [
-                            district, 
-                            district.toLowerCase(), 
-                            district.toUpperCase(), 
-                            new RegExp(`^${district}$`, 'i')
-                        ] 
-                    }
+                    districts: { $regex: new RegExp(`^${district.trim()}$`, 'i') }
                 };
             } else {
                 // Fallback from Web App: Show all PM products (including legacy)
