@@ -25,9 +25,19 @@ const getAvailableProducts = async (req, res, next) => {
 
         // Apply district filter if targetDistricts exist
         if (targetDistricts.length > 0) {
-            // Check if product districts array contains any of the target districts
-            query.districts = { $in: targetDistricts };
+            // Support various casings to ensure matches (Kandy, kandy, KANDY)
+            const districtVariants = targetDistricts.flatMap(d => [
+                d,
+                d.toLowerCase(),
+                d.toUpperCase(),
+                d.charAt(0).toUpperCase() + d.slice(1).toLowerCase()
+            ]);
+            query.districts = { $in: [...new Set(districtVariants)] };
         }
+
+        // NOTE: We are NOT adding sellerRole: 'PRODUCT_MANAGER' here because 
+        // some existing products in the DB (like Curbix) are missing that field.
+        // This ensures maximum visibility for the Farmer.
 
         console.log(`[AVAILABILITY_DEBUG] User: ${user.email} | Districts: [${targetDistricts}]`);
 
@@ -45,6 +55,10 @@ const getAvailableProducts = async (req, res, next) => {
             const productObj = p.toObject();
             if (!productObj.seller && productObj.manager) {
                 productObj.seller = productObj.manager;
+            }
+            // Ensure a fallback name if seller population failed
+            if (!productObj.seller) {
+                productObj.seller = { name: "AgroLanka Provider" };
             }
             return productObj;
         });
