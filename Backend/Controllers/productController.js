@@ -10,43 +10,41 @@ const getAvailableProducts = async (req, res, next) => {
         // 1. Collect all target districts for the user
         let targetDistricts = [];
         
-        // From assigned ASC (Farmers, Officers, etc)
+        // Use both assignedAsc and a direct 'district' field if it exists
         if (user.assignedAsc?.district) {
             targetDistricts.push(user.assignedAsc.district.trim());
+        } else if (user.district) {
+            targetDistricts.push(user.district.trim());
         }
         
-        // From service areas (Product Managers)
         if (user.serviceDistricts && user.serviceDistricts.length > 0) {
-            user.serviceDistricts.forEach(d => {
-                if (d && d.trim()) targetDistricts.push(d.trim());
-            });
+            user.serviceDistricts.forEach(d => { if (d) targetDistricts.push(d.trim()); });
         }
 
-        // Deduplicate and filter out empty strings
-        targetDistricts = [...new Set(targetDistricts)].filter(d => d && d.trim());
+        targetDistricts = [...new Set(targetDistricts)].filter(Boolean);
 
-        console.log(`[AVAILABILITY_DEBUG] --- Request Start ---`);
-        console.log(`[AVAILABILITY_DEBUG] User ID: ${user._id}`);
-        console.log(`[AVAILABILITY_DEBUG] User Role: ${user.role}`);
-        console.log(`[AVAILABILITY_DEBUG] Assigned ASC: ${JSON.stringify(user.assignedAsc)}`);
-        console.log(`[AVAILABILITY_DEBUG] Target Districts: [${targetDistricts.join(', ')}]`);
+        console.log(`[AVAILABILITY_DEBUG] User: ${user.email} | Districts: [${targetDistricts}]`);
 
-        // 2. Apply district filter
+        // BUILD QUERY
+        let query = { status: "Active" };
+        
         if (targetDistricts.length > 0) {
-            // Using a more robust regex that handles any weird spacing/casing better
-            query.$or = targetDistricts.map(d => ({
-                districts: { $regex: new RegExp(d.trim(), 'i') }
-            }));
+            // Case-insensitive regex match for ANY of the target districts
+            query.districts = { 
+                $in: targetDistricts.map(d => new RegExp(d, 'i')) 
+            };
         }
 
-        const totalActiveInDB = await Product.countDocuments({ status: "Active" });
-        console.log(`[AVAILABILITY_DEBUG] Total Active Products in DB (anywhere): ${totalActiveInDB}`);
+        // Blind search just to check DB connectivity and content
+        const allActive = await Product.find({ status: "Active" }).limit(5).lean();
+        console.log(`[AVAILABILITY_DEBUG] Sample Active Products in DB: ${allActive.map(p => p.name + "(" + p.districts + ")").join(', ')}`);
 
         const products = await Product.find(query).populate("seller", "name email phone");
-        console.log(`[AVAILABILITY_DEBUG] Matching Products Found: ${products.length}`);
-        console.log(`[AVAILABILITY_DEBUG] --- Request End ---`);
+        console.log(`[AVAILABILITY_DEBUG] Matching Products Found: ${products.length} for districts ${targetDistricts}`);
+
         res.json(products);
     } catch (error) {
+        console.error("[AVAILABILITY_DEBUG] ERROR:", error);
         next(error);
     }
 };
