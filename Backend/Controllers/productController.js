@@ -25,23 +25,26 @@ const getAvailableProducts = async (req, res, next) => {
         // Deduplicate and filter out empty strings
         targetDistricts = [...new Set(targetDistricts)].filter(d => d && d.trim());
 
-        console.log(`[AVAILABILITY_DEBUG] User: ${user.email} | Role: ${user.role} | ASC_Dist: ${user.assignedAsc?.district || 'N/A'}`);
-        console.log(`[AVAILABILITY_DEBUG] Target Search Districts: [${targetDistricts.join(', ') || 'ALL'}]`);
+        console.log(`[AVAILABILITY_DEBUG] --- Request Start ---`);
+        console.log(`[AVAILABILITY_DEBUG] User ID: ${user._id}`);
+        console.log(`[AVAILABILITY_DEBUG] User Role: ${user.role}`);
+        console.log(`[AVAILABILITY_DEBUG] Assigned ASC: ${JSON.stringify(user.assignedAsc)}`);
+        console.log(`[AVAILABILITY_DEBUG] Target Districts: [${targetDistricts.join(', ')}]`);
 
         // 2. Apply district filter
         if (targetDistricts.length > 0) {
-            // Using $or with $regex is often more reliable for array fields in different Mongo versions
+            // Using a more robust regex that handles any weird spacing/casing better
             query.$or = targetDistricts.map(d => ({
-                districts: { $regex: new RegExp(`^\\s*${d}\\s*$`, 'i') }
+                districts: { $regex: new RegExp(d.trim(), 'i') }
             }));
         }
 
-        // 3. Exclude user's own products
-        query.seller = { $ne: user._id };
+        const totalActiveInDB = await Product.countDocuments({ status: "Active" });
+        console.log(`[AVAILABILITY_DEBUG] Total Active Products in DB (anywhere): ${totalActiveInDB}`);
 
         const products = await Product.find(query).populate("seller", "name email phone");
-        const totalActive = await Product.countDocuments({ status: "Active" });
-        console.log(`[AVAILABILITY_DEBUG] Found ${products.length} matching products. (Total Active in DB: ${totalActive})`);
+        console.log(`[AVAILABILITY_DEBUG] Matching Products Found: ${products.length}`);
+        console.log(`[AVAILABILITY_DEBUG] --- Request End ---`);
         res.json(products);
     } catch (error) {
         next(error);
