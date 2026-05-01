@@ -22,23 +22,26 @@ const getAvailableProducts = async (req, res, next) => {
             });
         }
 
-        // Deduplicate
-        targetDistricts = [...new Set(targetDistricts)];
+        // Deduplicate and filter out empty strings
+        targetDistricts = [...new Set(targetDistricts)].filter(d => d && d.trim());
 
-        console.log(`[DEBUG] User ${user.email} (${user.role}) fetching products. Target Districts: [${targetDistricts.join(', ') || 'ALL'}]`);
+        console.log(`[AVAILABILITY_DEBUG] User: ${user.email} | Role: ${user.role} | ASC_Dist: ${user.assignedAsc?.district || 'N/A'}`);
+        console.log(`[AVAILABILITY_DEBUG] Target Search Districts: [${targetDistricts.join(', ') || 'ALL'}]`);
 
-        // 2. Apply district filter if user has a location preference
+        // 2. Apply district filter
         if (targetDistricts.length > 0) {
-            const regexDistricts = targetDistricts.map(d => new RegExp(`^\\s*${d}\\s*$`, 'i'));
-            query.districts = { $in: regexDistricts };
+            // Using $or with $regex is often more reliable for array fields in different Mongo versions
+            query.$or = targetDistricts.map(d => ({
+                districts: { $regex: new RegExp(`^\\s*${d}\\s*$`, 'i') }
+            }));
         }
 
         // 3. Exclude user's own products
         query.seller = { $ne: user._id };
 
         const products = await Product.find(query).populate("seller", "name email phone");
-        const totalProducts = await Product.countDocuments();
-        console.log(`[DEBUG] Found ${products.length} matching products. (Total in DB: ${totalProducts})`);
+        const totalActive = await Product.countDocuments({ status: "Active" });
+        console.log(`[AVAILABILITY_DEBUG] Found ${products.length} matching products. (Total Active in DB: ${totalActive})`);
         res.json(products);
     } catch (error) {
         next(error);
@@ -65,14 +68,14 @@ const createProduct = async (req, res, next) => {
 
         let districts = [];
         if (customDistricts && Array.isArray(customDistricts) && customDistricts.length > 0) {
-            // If user provides specific districts, use them (filtering by service area for Managers if needed)
-            districts = customDistricts.filter(d => d && d.trim());
+            // If user provides specific districts, use them and trim them
+            districts = customDistricts.filter(d => d && typeof d === 'string').map(d => d.trim());
         } else {
             // Default logic
-            if (user.role === 'PRODUCT_MANAGER') {
-                districts = user.serviceDistricts;
-            } else if (user.role === 'FARMER') {
-                districts = [user.assignedAsc?.district];
+            if (user.role === 'PRODUCT_MANAGER' && user.serviceDistricts) {
+                districts = user.serviceDistricts.map(d => d.trim());
+            } else if (user.role === 'FARMER' && user.assignedAsc?.district) {
+                districts = [user.assignedAsc.district.trim()];
             }
         }
 
