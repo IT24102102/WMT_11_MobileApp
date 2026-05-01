@@ -7,67 +7,67 @@ const getAvailableProducts = async (req, res, next) => {
         const user = req.user;
         let query = { status: "Active" };
 
-        // 1. Collect all target districts for the user
-        let targetDistricts = [];
-        
-        // Use both assignedAsc and a direct 'district' field if it exists
-        if (user.assignedAsc?.district) {
-            targetDistricts.push(user.assignedAsc.district.trim());
-        } else if (user.district) {
-            targetDistricts.push(user.district.trim());
+        if (user.role === 'FARMER') {
+            let district = user.assignedAsc?.district;
+
+            // Debugging: If population failed in middleware, try to re-populate
+            if (!district && user.assignedAsc) {
+                const User = require("../models/User");
+                const populatedUser = await User.findById(user._id).populate('assignedAsc');
+                district = populatedUser.assignedAsc?.district;
+            }
+
+            if (district) {
+                // EXACT WEB APP LOGIC: Show items listed by Product Managers in their district
+                query = {
+                    ...query,
+                    sellerRole: 'PRODUCT_MANAGER',
+                    districts: { 
+                        $in: [
+                            district, 
+                            district.toLowerCase(), 
+                            district.toUpperCase(), 
+                            new RegExp(`^${district}$`, 'i')
+                        ] 
+                    }
+                };
+            } else {
+                // Fallback from Web App: Show all PM products
+                query = {
+                    ...query,
+                    sellerRole: 'PRODUCT_MANAGER'
+                };
+            }
+        } else if (user.role === 'PRODUCT_MANAGER') {
+            // EXACT WEB APP LOGIC: PMs see products from Farmers in their service districts
+            const districts = user.serviceDistricts;
+            if (!districts || districts.length === 0) return res.json([]);
+            query = {
+                ...query,
+                districts: { $in: districts },
+                sellerRole: 'FARMER'
+            };
         }
-        
-        if (user.serviceDistricts && user.serviceDistricts.length > 0) {
-            user.serviceDistricts.forEach(d => { if (d) targetDistricts.push(d.trim()); });
-        }
 
-        targetDistricts = [...new Set(targetDistricts)].filter(Boolean);
-
-        // Apply district filter if targetDistricts exist
-        if (targetDistricts.length > 0) {
-            // Support various casings to ensure matches (Kandy, kandy, KANDY)
-            const districtVariants = targetDistricts.flatMap(d => [
-                d,
-                d.toLowerCase(),
-                d.toUpperCase(),
-                d.charAt(0).toUpperCase() + d.slice(1).toLowerCase()
-            ]);
-            query.districts = { $in: [...new Set(districtVariants)] };
-        }
-
-        // NOTE: We are NOT adding sellerRole: 'PRODUCT_MANAGER' here because 
-        // some existing products in the DB (like Curbix) are missing that field.
-        // This ensures maximum visibility for the Farmer.
-
-        console.log(`[AVAILABILITY_DEBUG] User: ${user.email} | Districts: [${targetDistricts}]`);
-
-        // Log totals for debugging
-        const totalInDB = await Product.countDocuments({});
-        const totalActiveInDB = await Product.countDocuments({ status: "Active" });
-        console.log(`[AVAILABILITY_DEBUG] Total in DB: ${totalInDB} | Total Active: ${totalActiveInDB}`);
+        console.log(`[ProductAPI] Final MongoDB Query:`, JSON.stringify(query));
 
         const products = await Product.find(query)
             .populate("seller", "name email phone")
             .populate("manager", "name email phone");
 
-        // Map products to ensure they have a 'seller' field even if the DB record uses 'manager'
+        // Ensure consistency for frontend (if DB has 'manager' but not 'seller')
         const mappedProducts = products.map(p => {
             const productObj = p.toObject();
             if (!productObj.seller && productObj.manager) {
                 productObj.seller = productObj.manager;
             }
-            // Ensure a fallback name if seller population failed
-            if (!productObj.seller) {
-                productObj.seller = { name: "AgroLanka Provider" };
-            }
             return productObj;
         });
 
-        console.log(`[AVAILABILITY_DEBUG] Returning ${mappedProducts.length} products to frontend.`);
-
+        console.log(`[ProductAPI] Products Found: ${mappedProducts.length}`);
         res.json(mappedProducts);
     } catch (error) {
-        console.error("[AVAILABILITY_DEBUG] ERROR:", error);
+        console.error("[ProductAPI] ERROR:", error);
         next(error);
     }
 };
