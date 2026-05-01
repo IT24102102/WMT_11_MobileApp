@@ -42,6 +42,11 @@ const productSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
+        manager: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: false, // Legacy field name found in database
+        },
         sellerRole: {
             type: String,
             enum: ["PRODUCT_MANAGER", "FARMER"],

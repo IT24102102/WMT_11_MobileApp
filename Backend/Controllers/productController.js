@@ -23,20 +23,35 @@ const getAvailableProducts = async (req, res, next) => {
 
         targetDistricts = [...new Set(targetDistricts)].filter(Boolean);
 
+        // Apply district filter if targetDistricts exist
+        if (targetDistricts.length > 0) {
+            // Check if product districts array contains any of the target districts
+            query.districts = { $in: targetDistricts };
+        }
+
         console.log(`[AVAILABILITY_DEBUG] User: ${user.email} | Districts: [${targetDistricts}]`);
 
-        // BUILD QUERY - TEMPORARILY REMOVING DISTRICT FILTER TO DEBUG
-        let query = { status: "Active" };
-        
-        // Log total products in DB regardless of anything
+        // Log totals for debugging
         const totalInDB = await Product.countDocuments({});
         const totalActiveInDB = await Product.countDocuments({ status: "Active" });
         console.log(`[AVAILABILITY_DEBUG] Total in DB: ${totalInDB} | Total Active: ${totalActiveInDB}`);
 
-        const products = await Product.find(query).populate("seller", "name email phone");
-        console.log(`[AVAILABILITY_DEBUG] Returning ${products.length} products to frontend.`);
+        const products = await Product.find(query)
+            .populate("seller", "name email phone")
+            .populate("manager", "name email phone");
 
-        res.json(products);
+        // Map products to ensure they have a 'seller' field even if the DB record uses 'manager'
+        const mappedProducts = products.map(p => {
+            const productObj = p.toObject();
+            if (!productObj.seller && productObj.manager) {
+                productObj.seller = productObj.manager;
+            }
+            return productObj;
+        });
+
+        console.log(`[AVAILABILITY_DEBUG] Returning ${mappedProducts.length} products to frontend.`);
+
+        res.json(mappedProducts);
     } catch (error) {
         console.error("[AVAILABILITY_DEBUG] ERROR:", error);
         next(error);
@@ -47,8 +62,21 @@ const getAvailableProducts = async (req, res, next) => {
 // @route   GET /api/products/my-listings
 const getMyListings = async (req, res, next) => {
     try {
-        const products = await Product.find({ seller: req.user._id }).populate("seller", "name email");
-        res.json(products);
+        // Find products where current user is either 'seller' or 'manager'
+        const products = await Product.find({ 
+            $or: [{ seller: req.user._id }, { manager: req.user._id }] 
+        }).populate("seller", "name email").populate("manager", "name email");
+        
+        // Ensure consistency for frontend
+        const mappedProducts = products.map(p => {
+            const productObj = p.toObject();
+            if (!productObj.seller && productObj.manager) {
+                productObj.seller = productObj.manager;
+            }
+            return productObj;
+        });
+
+        res.json(mappedProducts);
     } catch (error) {
         next(error);
     }
@@ -148,7 +176,8 @@ const deleteProduct = async (req, res, next) => {
             throw new Error("Product not found");
         }
 
-        if (product.seller.toString() !== req.user._id.toString()) {
+        if (product.seller?.toString() !== req.user._id.toString() && 
+            product.manager?.toString() !== req.user._id.toString()) {
             res.status(401);
             throw new Error("Not authorized to delete this product");
         }
