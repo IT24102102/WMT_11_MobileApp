@@ -48,6 +48,7 @@ const AdminDashboard = ({ navigation }) => {
     { id: 'staff', title: 'Staff & Allocation', desc: 'Manage and reallocate staff.', icon: '👥', screen: 'ManageOfficers' },
     { id: 'products', title: 'Product Approval', desc: 'Review product listings.', icon: '📦', screen: 'ProductReview' },
     { id: 'reports', title: 'Analytics & Reports', desc: 'View system-wide production reports.', icon: '📊', screen: 'RegionalReports' }, 
+    { id: 'taskReports', title: 'Report Requests', desc: 'Request specific reports from ASCs.', icon: '📝', screen: 'AdminReportRequests' },
   ];
 
   return (

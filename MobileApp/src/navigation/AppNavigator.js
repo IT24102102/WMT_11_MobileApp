@@ -33,6 +33,8 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import ProductDetailsScreen from '../screens/ProductDetailsScreen';
 import PaymentScreen from '../screens/PaymentScreen';
 import WeatherForecastScreen from '../screens/WeatherForecastScreen';
+import AdminReportRequests from '../screens/admin/AdminReportRequests';
+import AscReportSubmissions from '../screens/asc/AscReportSubmissions';
 
 const Stack = createStackNavigator();
 
@@ -112,6 +114,8 @@ const AppNavigator = () => {
             <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />
             <Stack.Screen name="WeatherForecast" component={WeatherForecastScreen} />
+            <Stack.Screen name="AdminReportRequests" component={AdminReportRequests} />
+            <Stack.Screen name="AscReportSubmissions" component={AscReportSubmissions} />
           </>
         )}
       </Stack.Navigator>

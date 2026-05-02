@@ -35,6 +35,7 @@ const ASCDashboard = ({ navigation }) => {
     { id: 'loans', title: t('asc.loanApps'), icon: '💳', desc: t('asc.loanAppsDesc'), endpoint: `/loans?ascId=${ascId}` },
     { id: 'compensations', title: t('asc.compClaims'), icon: '📋', desc: t('asc.compClaimsDesc'), endpoint: '/compensation' },
     { id: 'machinery', title: t('asc.machineryServices'), icon: '🚜', desc: t('asc.machineryServicesDesc'), endpoint: '/machinery/regional-data' },
+    { id: 'reports', title: 'Assigned Reports', icon: '📝', desc: 'Manage report tasks from Admin.', screen: 'AscReportSubmissions' },
   ];
 
   useEffect(() => {
@@ -176,7 +177,13 @@ const ASCDashboard = ({ navigation }) => {
             <TouchableOpacity 
               key={section.id} 
               style={styles.card}
-              onPress={() => setActiveTab(section.id)}
+              onPress={() => {
+                if (section.screen) {
+                  navigation.navigate(section.screen);
+                } else {
+                  setActiveTab(section.id);
+                }
+              }}
             >
               <Text style={styles.cardIcon}>{section.icon}</Text>
               <Text style={styles.cardTitle}>{section.title}</Text>

@@ -54,6 +54,7 @@ app.use("/api/machinery", require("./routes/machineryRoutes"));
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/purchases", require("./routes/purchaseRoutes"));
 app.use("/api/ai", require("./routes/aiRoutes"));
+app.use("/api/reports", require("./routes/reportRoutes"));
 
 /**
  * Error Handling Middleware
