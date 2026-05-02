@@ -17,6 +17,7 @@ const getAvailableProducts = async (req, res, next) => {
                 district = populatedUser.assignedAsc?.district;
             }
 
+            if (district) {
                 // FIXED DISTRICT QUERY:
                 // Use a direct regex for case-insensitive matching on the districts array
                 query = {

@@ -1,12 +1,61 @@
-import React, { useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, FlatList, ImageBackground } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, FlatList, ImageBackground, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import apiClient from '../api/apiClient';
 
 const FarmerDashboard = ({ navigation }) => {
   const { userInfo } = useContext(AuthContext);
   const { t } = useLanguage();
+
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const district = userInfo?.assignedAsc?.district || 'Colombo';
+        // Using a free weather API (OpenWeatherMap placeholder or similar)
+        // For production, the user should provide their own API Key
+        const API_KEY = 'bd5e378503939ddaee76f12ad7a97608'; // Replace with your key
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${district},LK&units=metric&appid=${API_KEY}`);
+        const data = await response.json();
+        
+        if (data.main) {
+          setWeather({
+            temp: Math.round(data.main.temp),
+            condition: data.weather[0].main,
+            description: data.weather[0].description,
+            humidity: data.main.humidity,
+            wind: data.wind.speed,
+            icon: getWeatherIcon(data.weather[0].main)
+          });
+        }
+      } catch (err) {
+        console.error('Weather Fetch Error:', err);
+      } finally {
+        setWeatherLoading(false);
+      }
+    };
+
+    fetchWeather();
+  }, [userInfo]);
+
+  const getWeatherIcon = (condition) => {
+    const map = {
+      'Clear': '☀️',
+      'Clouds': '☁️',
+      'Rain': '🌧️',
+      'Drizzle': '🌦️',
+      'Thunderstorm': '⛈️',
+      'Snow': '❄️',
+      'Mist': '🌫️',
+      'Smoke': '🌫️',
+      'Haze': '🌫️',
+    };
+    return map[condition] || '☀️';
+  };
 
   const menuItems = [
     { id: 'crop', title: t('farmer_crop.title'), desc: t('farmer.registerCropDesc'), icon: '🌱', color: '#4caf50', screen: 'RegisterCrop' },
@@ -16,6 +65,14 @@ const FarmerDashboard = ({ navigation }) => {
     { id: 'products', title: t('farmer.agriProducts'), desc: t('farmer.agriProductsDesc'), icon: '🛒', color: '#9c27b0', screen: 'BuyTab' },
     { id: 'harvest', title: t('farmer.sellHarvest'), desc: t('farmer.sellHarvestDesc'), icon: '📈', color: '#f44336', screen: 'SellTab' },
     { id: 'ai', title: t('farmer.leafDiagnostic'), desc: t('farmer.leafDiagnosticDesc'), icon: '🔍', color: '#00bcd4', screen: 'LeafDiagnostic' },
+    { 
+      id: 'weather', 
+      title: 'Weather Forecast', 
+      desc: weather ? `${weather.temp}°C ${weather.condition} in ${userInfo?.assignedAsc?.name || 'your area'}` : 'Checking weather...', 
+      icon: weather ? weather.icon : '🌦️', 
+      color: '#0288d1', 
+      screen: 'WeatherForecast' 
+    },
   ];
 
   return (
@@ -24,7 +81,7 @@ const FarmerDashboard = ({ navigation }) => {
       style={styles.background}
       resizeMode="cover"
     >
-      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={styles.container} edges = {['top', 'left', 'right']}>
         <StatusBar barStyle="dark-content" />
         <ScrollView contentContainerStyle={styles.scrollContent}>
         
@@ -43,7 +100,16 @@ const FarmerDashboard = ({ navigation }) => {
             <TouchableOpacity 
               key={item.id} 
               style={styles.card}
-              onPress={() => navigation.navigate(item.screen)}
+              onPress={() => {
+                if (item.id === 'weather') {
+                  navigation.navigate('WeatherForecast', { 
+                    district: userInfo?.assignedAsc?.district || 'Colombo',
+                    ascName: userInfo?.assignedAsc?.name || 'ASC Center'
+                  });
+                } else {
+                  navigation.navigate(item.screen);
+                }
+              }}
             >
               <View style={[styles.iconBox, { backgroundColor: item.color + '20' }]}>
                 <Text style={styles.icon}>{item.icon}</Text>

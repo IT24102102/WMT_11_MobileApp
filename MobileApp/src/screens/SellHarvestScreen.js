@@ -36,11 +36,19 @@ const SellHarvestScreen = ({ navigation }) => {
     price: '',
     unit: '',
     stock: '', // New field for quantity
-    image: ''
+    image: '',
+    districts: [] // Array of districts
   });
 
   const categories = ['Rice', 'Vegetables', 'Fruits', 'Spices', 'Other'];
   const units = ['kg', 'g', 'pack', 'bundle', 'unit'];
+  const districtsList = [
+    'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya', 
+    'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar', 
+    'Vavuniya', 'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee', 
+    'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla', 
+    'Moneragala', 'Ratnapura', 'Kegalle'
+  ];
 
   const fetchMyListings = useCallback(async () => {
     setLoading(true);
@@ -61,19 +69,40 @@ const SellHarvestScreen = ({ navigation }) => {
     }
   }, [activeTab, fetchMyListings]);
 
+  const toggleDistrict = (district) => {
+    setForm(prev => ({
+      ...prev,
+      districts: prev.districts.includes(district) 
+        ? prev.districts.filter(d => d !== district)
+        : [...prev.districts, district]
+    }));
+  };
+
   const handleSubmit = async () => {
+    // If no district selected, try to fallback to user's assigned district
+    const finalDistricts = form.districts.length > 0 
+      ? form.districts 
+      : (userInfo?.assignedAsc?.district ? [userInfo.assignedAsc.district] : []);
+
     if (!form.name || !form.price || !form.unit) {
       Alert.alert('Error', 'Please fill all required fields');
       return;
     }
+
+    if (finalDistricts.length === 0) {
+      Alert.alert('Error', 'Please select at least one district for this listing');
+      return;
+    }
+
     setLoading(true);
     try {
       await apiClient.post('/products', {
         ...form,
+        districts: finalDistricts,
         stock: Number(form.stock) || 0
       });
       Alert.alert('Success', 'Harvest listed successfully!');
-      setForm({ name: '', category: 'Other', description: '', price: '', unit: '', stock: '', image: '' });
+      setForm({ name: '', category: 'Other', description: '', price: '', unit: '', stock: '', image: '', districts: [] });
       setActiveTab('MY_LISTINGS');
     } catch (err) {
       Alert.alert('Error', err.response?.data?.message || 'Failed to list harvest');
@@ -231,6 +260,20 @@ const SellHarvestScreen = ({ navigation }) => {
               </View>
             </View>
 
+            <Text style={styles.formLabel}>Available Districts *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+              {districtsList.map(d => (
+                <TouchableOpacity 
+                  key={d} 
+                  style={[styles.chip, form.districts.includes(d) && styles.activeChip]}
+                  onPress={() => toggleDistrict(d)}
+                >
+                  <Text style={[styles.chipText, form.districts.includes(d) && styles.activeChipText]}>{d}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <Text style={styles.miniHint}>Select districts where buyers can see your listing.</Text>
+
             <Text style={styles.formLabel}>Unit *</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
               {units.map(u => (
@@ -320,6 +363,7 @@ const styles = StyleSheet.create({
   content: { padding: 20 },
   card: { backgroundColor: '#fff', borderRadius: 20, padding: 20, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
   formLabel: { fontSize: 14, fontWeight: 'bold', color: '#444', marginTop: 15, marginBottom: 8 },
+  miniHint: { fontSize: 10, color: '#888', marginTop: -5, marginBottom: 10 },
   input: { backgroundColor: '#f9f9f9', borderRadius: 12, padding: 15, fontSize: 15, borderWidth: 1, borderColor: '#eee', color: '#333' },
   chipRow: { flexDirection: 'row', marginBottom: 5 },
   chip: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 20, backgroundColor: '#f0f0f0', marginRight: 10 },

@@ -15,7 +15,7 @@ import {
 import apiClient from '../api/apiClient';
 
 const PaymentScreen = ({ route, navigation }) => {
-    const { product } = route.params;
+    const { product, quantity, totalAmount } = route.params;
     const [loading, setLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('Card');
     const [cardNumber, setCardNumber] = useState('');
@@ -34,6 +34,8 @@ const PaymentScreen = ({ route, navigation }) => {
         try {
             const response = await apiClient.post('/purchases', {
                 productId: product._id,
+                quantity: quantity || 1,
+                totalAmount: totalAmount || product.price,
                 paymentMethod: paymentMethod === 'Card' ? 'Card' : 'Bank Transfer'
             });
 
@@ -75,10 +77,14 @@ const PaymentScreen = ({ route, navigation }) => {
                             <Text style={styles.summaryLabel}>{product.name}</Text>
                             <Text style={styles.summaryValue}>LKR {product.price}</Text>
                         </View>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Quantity</Text>
+                            <Text style={styles.summaryValue}>x {quantity || 1} {product.unit}</Text>
+                        </View>
                         <View style={styles.divider} />
                         <View style={styles.summaryRow}>
                             <Text style={styles.totalLabel}>Total Amount</Text>
-                            <Text style={styles.totalValue}>LKR {product.price}</Text>
+                            <Text style={styles.totalValue}>LKR {(totalAmount || product.price).toLocaleString()}</Text>
                         </View>
                     </View>
 
@@ -165,7 +171,7 @@ const PaymentScreen = ({ route, navigation }) => {
                         {loading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.payBtnText}>Confirm and Pay LKR {product.price}</Text>
+                            <Text style={styles.payBtnText}>Confirm and Pay LKR {(totalAmount || product.price).toLocaleString()}</Text>
                         )}
                     </TouchableOpacity>
                 </ScrollView>

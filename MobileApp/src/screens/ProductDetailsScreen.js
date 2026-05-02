@@ -17,6 +17,9 @@ const ProductDetailsScreen = ({ route, navigation }) => {
   const { product } = route.params;
   const { t } = useLanguage();
 
+  const [quantity, setQuantity] = React.useState(1);
+  const totalPrice = product.price * quantity;
+
   const handleShare = async () => {
     try {
       await Share.share({
@@ -33,6 +36,15 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     } else {
       alert('Seller phone number not available');
     }
+  };
+
+  const updateQuantity = (val) => {
+    if (val < 1) return;
+    if (product.stock && val > product.stock) {
+        alert(`Only ${product.stock} units available in stock.`);
+        return;
+    }
+    setQuantity(val);
   };
 
   return (
@@ -77,6 +89,37 @@ const ProductDetailsScreen = ({ route, navigation }) => {
               <Text style={styles.currencyLabel}>LKR</Text>
               <Text style={styles.priceValue}>{product.price}</Text>
             </View>
+          </View>
+
+          {/* Quantity Selector */}
+          <View style={styles.quantitySection}>
+            <Text style={styles.sectionTitle}>Select Quantity</Text>
+            <View style={styles.quantityControls}>
+              <TouchableOpacity 
+                style={styles.qtyBtn} 
+                onPress={() => updateQuantity(quantity - 1)}
+              >
+                <Text style={styles.qtyBtnText}>-</Text>
+              </TouchableOpacity>
+              <View style={styles.qtyDisplay}>
+                <Text style={styles.qtyText}>{quantity}</Text>
+                <Text style={styles.qtyUnit}>{product.unit}</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.qtyBtn} 
+                onPress={() => updateQuantity(quantity + 1)}
+              >
+                <Text style={styles.qtyBtnText}>+</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.totalCalculation}>
+                <Text style={styles.totalLabel}>Total Price:</Text>
+                <Text style={styles.totalAmount}>LKR {totalPrice.toLocaleString()}</Text>
+              </View>
+            </View>
+            {product.stock > 0 ? (
+                <Text style={styles.stockInfo}>Available Stock: {product.stock} {product.unit}</Text>
+            ) : null}
           </View>
 
           {/* Description */}
@@ -127,7 +170,11 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.buyNowBtn} 
-          onPress={() => navigation.navigate('Payment', { product })}
+          onPress={() => navigation.navigate('Payment', { 
+            product, 
+            quantity, 
+            totalAmount: totalPrice 
+          })}
         >
           <Text style={styles.buyNowText}>Buy Now</Text>
         </TouchableOpacity>
@@ -173,6 +220,34 @@ const styles = StyleSheet.create({
   priceContainer: { alignItems: 'flex-end' },
   currencyLabel: { fontSize: 12, fontWeight: 'bold', color: '#2e7d32' },
   priceValue: { fontSize: 28, fontWeight: 'bold', color: '#2e7d32' },
+  quantitySection: { 
+    marginBottom: 25, 
+    padding: 15, 
+    backgroundColor: '#f1f8e9', 
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#c8e6c9'
+  },
+  quantityControls: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  qtyBtn: { 
+    width: 45, 
+    height: 45, 
+    backgroundColor: '#fff', 
+    borderRadius: 12, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2e7d32',
+    elevation: 2
+  },
+  qtyBtnText: { fontSize: 24, fontWeight: 'bold', color: '#2e7d32' },
+  qtyDisplay: { marginHorizontal: 15, alignItems: 'center', minWidth: 60 },
+  qtyText: { fontSize: 22, fontWeight: 'bold', color: '#333' },
+  qtyUnit: { fontSize: 12, color: '#666' },
+  totalCalculation: { flex: 1, alignItems: 'flex-end', marginLeft: 10 },
+  totalLabel: { fontSize: 10, color: '#666', textTransform: 'uppercase' },
+  totalAmount: { fontSize: 18, fontWeight: 'bold', color: '#2e7d32' },
+  stockInfo: { fontSize: 12, color: '#e53935', marginTop: 8, fontWeight: '600' },
   section: { marginBottom: 25 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 10 },
   descriptionText: { fontSize: 15, color: '#555', lineHeight: 22 },

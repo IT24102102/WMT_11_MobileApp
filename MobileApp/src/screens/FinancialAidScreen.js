@@ -20,6 +20,7 @@ import { useLanguage } from '../context/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import apiClient from '../api/apiClient';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const FinancialAidScreen = ({ navigation }) => {
   const { userInfo } = useContext(AuthContext);
@@ -56,6 +57,17 @@ const FinancialAidScreen = ({ navigation }) => {
     asc: userInfo?.assignedAsc?._id || userInfo?.assignedAsc || '',
     images: [] // To store locally picked image URIs
   });
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const onDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      // Format to YYYY-MM-DD
+      const dateString = selectedDate.toISOString().split('T')[0];
+      setCompForm({ ...compForm, incidentDate: dateString });
+    }
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -443,7 +455,25 @@ const FinancialAidScreen = ({ navigation }) => {
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1, marginRight: 10 }]}>
                 <Text style={styles.label}>Date *</Text>
-                <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={compForm.incidentDate} onChangeText={(val) => setCompForm({ ...compForm, incidentDate: val })} />
+                <TouchableOpacity 
+                  style={styles.datePickerBtn} 
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="#2e7d32" style={{ marginRight: 8 }} />
+                  <Text style={styles.datePickerText}>
+                    {compForm.incidentDate || 'Select Date'}
+                  </Text>
+                </TouchableOpacity>
+
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={compForm.incidentDate ? new Date(compForm.incidentDate) : new Date()}
+                    mode="date"
+                    display="default"
+                    maximumDate={new Date()} // Can't select future dates for incidents
+                    onChange={onDateChange}
+                  />
+                )}
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Area (Ac) *</Text>
@@ -556,6 +586,20 @@ const styles = StyleSheet.create({
   formGroup: { marginBottom: 20 },
   label: { fontSize: 14, fontWeight: 'bold', color: '#444', marginBottom: 8 },
   input: { backgroundColor: '#f9f9f9', borderRadius: 12, padding: 15, fontSize: 15, borderWidth: 1, borderColor: '#eee', color: '#333' },
+  datePickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#eee',
+    height: 55
+  },
+  datePickerText: {
+    fontSize: 15,
+    color: '#333'
+  },
   formRow: { flexDirection: 'row' },
   chipRow: { flexDirection: 'row', marginBottom: 5 },
   chip: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 20, backgroundColor: '#f0f0f0', marginRight: 10 },

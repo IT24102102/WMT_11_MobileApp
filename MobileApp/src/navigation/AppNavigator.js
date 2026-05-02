@@ -32,6 +32,7 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import ProductDetailsScreen from '../screens/ProductDetailsScreen';
 import PaymentScreen from '../screens/PaymentScreen';
+import WeatherForecastScreen from '../screens/WeatherForecastScreen';
 
 const Stack = createStackNavigator();
 
@@ -110,6 +111,7 @@ const AppNavigator = () => {
             <Stack.Screen name="RegionalReports" component={RegionalReports} />
             <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />
+            <Stack.Screen name="WeatherForecast" component={WeatherForecastScreen} />
           </>
         )}
       </Stack.Navigator>

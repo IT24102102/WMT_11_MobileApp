@@ -13,7 +13,8 @@ const generateReceiptNumber = () => {
 // @route   POST /api/purchases
 const createPurchase = async (req, res, next) => {
     try {
-        const { productId, paymentMethod } = req.body;
+        const { productId, paymentMethod, quantity: reqQuantity, totalAmount } = req.body;
+        const buyQuantity = Number(reqQuantity) || 1;
 
         const product = await Product.findById(productId).populate("seller", "name email");
         if (!product) {
@@ -21,9 +22,9 @@ const createPurchase = async (req, res, next) => {
             throw new Error("Product not found");
         }
 
-        if (product.status === "Out of Stock") {
+        if (product.status === "Out of Stock" || (product.stock !== undefined && product.stock < buyQuantity)) {
             res.status(400);
-            throw new Error("This product is already sold out");
+            throw new Error(`Insufficient stock. Only ${product.stock || 0} items available.`);
         }
 
         if (product.seller._id.toString() === req.user._id.toString()) {
@@ -36,15 +37,23 @@ const createPurchase = async (req, res, next) => {
             seller: product.seller._id,
             product: product._id,
             productName: product.name,
-            amount: product.price,
-            quantity: product.unit,
+            amount: totalAmount || (product.price * buyQuantity),
+            quantity: `${buyQuantity} ${product.unit}`,
             paymentMethod,
             receiptNumber: generateReceiptNumber(),
             status: "Completed",
         });
 
-        // Optionally mark product as sold (Out of Stock)
-        product.status = "Out of Stock";
+        // Reduce stock
+        if (product.stock !== undefined) {
+            product.stock -= buyQuantity;
+            if (product.stock <= 0) {
+                product.status = "Out of Stock";
+            }
+        } else {
+            // Legacy support: if no stock field, mark as sold out
+            product.status = "Out of Stock";
+        }
         await product.save();
 
         const populatedPurchase = await Purchase.findById(purchase._id)
