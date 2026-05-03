@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 
-const AI_API_URL = 'https://it24102102-agrolanka-ai-api-mobile.hf.space/predict';
+const AI_API_URL = 'http://10.111.44.136:7860/predict'; // Make sure your mobile device and PC are on the same Wi-Fi network
 
 const LeafDiagnosticScreen = ({ navigation }) => {
   const { t } = useLanguage();
