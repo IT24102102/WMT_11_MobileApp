@@ -17,7 +17,7 @@ const LeafDiagnosticScreen = ({ navigation }) => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      quality: 0.8,
+      quality: 1, // Use highest quality to avoid compression artifacts confusing the AI
     });
 
     if (!result.canceled) {
@@ -36,7 +36,7 @@ const LeafDiagnosticScreen = ({ navigation }) => {
 
     let result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
-      quality: 0.8,
+      quality: 1, // Use highest quality
     });
 
     if (!result.canceled) {
@@ -127,8 +127,10 @@ const LeafDiagnosticScreen = ({ navigation }) => {
             {result && (
               <View style={styles.resultContainer}>
                 <Text style={styles.resultLabel}>Diagnosis Result:</Text>
-                <Text style={styles.resultText}>{result.class_name}</Text>
-                <Text style={styles.confidenceText}>Confidence: {(result.confidence * 100).toFixed(2)}%</Text>
+                <Text style={styles.resultText}>{result.class_name || result.prediction}</Text>
+                <Text style={styles.confidenceText}>
+                  Confidence: {typeof result.confidence === 'string' ? result.confidence : `${(result.confidence * 100).toFixed(2)}%`}
+                </Text>
               </View>
             )}
 
@@ -165,11 +167,15 @@ const LeafDiagnosticScreen = ({ navigation }) => {
 
           {result && (
             <View style={styles.treatmentCard}>
-              <Text style={styles.treatmentTitle}>🔍 Symptoms:</Text>
-              <Text style={styles.treatmentText}>{result.symptoms}</Text>
+              {result.symptoms && (
+                <>
+                  <Text style={styles.treatmentTitle}>🔍 Symptoms:</Text>
+                  <Text style={styles.treatmentText}>{result.symptoms}</Text>
+                </>
+              )}
               <Text style={styles.treatmentTitle}>💡 Recommended Action:</Text>
               <Text style={styles.treatmentText}>
-                {result.recommendations}
+                {result.recommendations || `Please consult your local Agrarian Service Center for professional advice and treatment options for ${result.prediction || result.class_name}.`}
               </Text>
               <Text style={[styles.treatmentText, { marginTop: 10, fontStyle: 'italic', color: '#666' }]}>
                 Please consult your local Agrarian Service Center for professional confirmation.
