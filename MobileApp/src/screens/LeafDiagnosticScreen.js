@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 
-const AI_API_URL = 'http://10.111.44.136:7860/predict'; // Make sure your mobile device and PC are on the same Wi-Fi network
+import apiClient from '../api/apiClient';
 
 const LeafDiagnosticScreen = ({ navigation }) => {
   const { t } = useLanguage();
@@ -17,8 +17,25 @@ const LeafDiagnosticScreen = ({ navigation }) => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+      setResult(null); // Clear previous result
+    }
+  };
+
+  const takePhoto = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Alert.alert("Permission Required", "You need to allow camera access to take a photo.");
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
       quality: 0.8,
     });
 
@@ -35,7 +52,7 @@ const LeafDiagnosticScreen = ({ navigation }) => {
     }
 
     setLoading(true);
-    
+
     try {
       const formData = new FormData();
       formData.append('file', {
@@ -44,24 +61,28 @@ const LeafDiagnosticScreen = ({ navigation }) => {
         type: 'image/jpeg',
       });
 
-      const response = await axios.post(AI_API_URL, formData, {
+      const response = await apiClient.post('/ai/detect-rice-leaf', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
+      console.log('--- Prediction Result from Server ---');
+      console.log(response.data);
+      console.log('-------------------------------------');
+
       setResult(response.data);
     } catch (error) {
       console.error(error);
-      Alert.alert("Prediction Failed", "Could not connect to the AI server. Please try again later.");
+      Alert.alert("Prediction Failed", "Could not connect to the server. Please make sure the AI service is running.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ImageBackground 
-      source={require('../../assets/images/hero.png')} 
+    <ImageBackground
+      source={require('../../assets/images/hero.png')}
       style={styles.background}
       resizeMode="cover"
     >
@@ -85,9 +106,14 @@ const LeafDiagnosticScreen = ({ navigation }) => {
             {image ? (
               <View style={styles.imageContainer}>
                 <Image source={{ uri: image }} style={styles.previewImage} />
-                <TouchableOpacity style={styles.changeBtn} onPress={pickImage}>
-                  <Text style={styles.changeBtnText}>Change Image</Text>
-                </TouchableOpacity>
+                <View style={styles.changeBtnRow}>
+                  <TouchableOpacity style={styles.changeBtn} onPress={takePhoto}>
+                    <Text style={styles.changeBtnText}>📷 Retake</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.changeBtn} onPress={pickImage}>
+                    <Text style={styles.changeBtnText}>🖼️ Reselect</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ) : (
               <>
@@ -97,22 +123,27 @@ const LeafDiagnosticScreen = ({ navigation }) => {
                 <Text style={styles.step}>3. Get an instant diagnosis and treatment plan.</Text>
               </>
             )}
-            
+
             {result && (
               <View style={styles.resultContainer}>
                 <Text style={styles.resultLabel}>Diagnosis Result:</Text>
-                <Text style={styles.resultText}>{result.prediction}</Text>
-                <Text style={styles.confidenceText}>Confidence: {result.confidence}</Text>
+                <Text style={styles.resultText}>{result.class_name}</Text>
+                <Text style={styles.confidenceText}>Confidence: {(result.confidence * 100).toFixed(2)}%</Text>
               </View>
             )}
 
             {!image ? (
-              <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
-                <Text style={styles.uploadBtnText}>📷 Take Photo / Upload</Text>
-              </TouchableOpacity>
+              <View style={styles.buttonRow}>
+                <TouchableOpacity style={styles.uploadBtnHalf} onPress={takePhoto}>
+                  <Text style={styles.uploadBtnText}>📷 Camera</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.uploadBtnHalf} onPress={pickImage}>
+                  <Text style={styles.uploadBtnText}>🖼️ Gallery</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
-              <TouchableOpacity 
-                style={[styles.analyzeBtn, loading && styles.disabledBtn]} 
+              <TouchableOpacity
+                style={[styles.analyzeBtn, loading && styles.disabledBtn]}
                 onPress={analyzeImage}
                 disabled={loading}
               >
@@ -133,12 +164,17 @@ const LeafDiagnosticScreen = ({ navigation }) => {
           )}
 
           {result && (
-             <View style={styles.treatmentCard}>
-                <Text style={styles.treatmentTitle}>💡 Recommended Action:</Text>
-                <Text style={styles.treatmentText}>
-                  Please consult your local Agrarian Service Center for professional advice and treatment options for {result.prediction}.
-                </Text>
-             </View>
+            <View style={styles.treatmentCard}>
+              <Text style={styles.treatmentTitle}>🔍 Symptoms:</Text>
+              <Text style={styles.treatmentText}>{result.symptoms}</Text>
+              <Text style={styles.treatmentTitle}>💡 Recommended Action:</Text>
+              <Text style={styles.treatmentText}>
+                {result.recommendations}
+              </Text>
+              <Text style={[styles.treatmentText, { marginTop: 10, fontStyle: 'italic', color: '#666' }]}>
+                Please consult your local Agrarian Service Center for professional confirmation.
+              </Text>
+            </View>
           )}
         </ScrollView>
       </SafeAreaView>
@@ -163,12 +199,15 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 15 },
   step: { fontSize: 15, color: '#444', marginBottom: 12, lineHeight: 20 },
   uploadBtn: { backgroundColor: '#2e7d32', marginTop: 15, padding: 18, borderRadius: 15, alignItems: 'center' },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 },
+  uploadBtnHalf: { backgroundColor: '#2e7d32', padding: 18, borderRadius: 15, alignItems: 'center', flex: 0.48 },
   analyzeBtn: { backgroundColor: '#1565c0', marginTop: 15, padding: 18, borderRadius: 15, alignItems: 'center' },
   disabledBtn: { backgroundColor: '#90caf9' },
   uploadBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   imageContainer: { alignItems: 'center', marginBottom: 20 },
   previewImage: { width: '100%', height: 200, borderRadius: 15, marginBottom: 10 },
-  changeBtn: { padding: 10 },
+  changeBtnRow: { flexDirection: 'row', justifyContent: 'center', gap: 20 },
+  changeBtn: { padding: 10, backgroundColor: '#e8f5e9', borderRadius: 10, borderWidth: 1, borderColor: '#c8e6c9', marginHorizontal: 5 },
   changeBtnText: { color: '#2e7d32', fontWeight: '600' },
   resultContainer: { backgroundColor: '#f1f8e9', padding: 20, borderRadius: 15, marginBottom: 20, borderWidth: 1, borderStyle: 'dashed', borderColor: '#2e7d32' },
   resultLabel: { fontSize: 14, color: '#666', marginBottom: 5 },

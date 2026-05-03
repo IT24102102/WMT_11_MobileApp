@@ -28,12 +28,19 @@ router.post('/detect-rice-leaf', protect, upload.single('file'), async (req, res
             contentType: req.file.mimetype,
         });
 
-        // Forward to Flask AI API (running on port 5001)
-        const response = await axios.post('http://localhost:5001/predict', form, {
+        // Forward to Flask AI API (Hugging Face Space or Local)
+        const aiModelUrl = process.env.AI_MODEL_URL || 'https://ruu03-agrolanka-api.hf.space/predict';
+        
+        const response = await axios.post(aiModelUrl, form, {
             headers: {
                 ...form.getHeaders(),
             },
         });
+
+        // Print the Hugging Face response to the backend terminal
+        console.log('--- AI Model Response ---');
+        console.log(response.data);
+        console.log('-------------------------');
 
         // Return the prediction results to the frontend
         res.json(response.data);
