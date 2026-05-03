@@ -5,13 +5,15 @@ const ASC = require('../models/ASC');
 // @route   POST /api/reports/requests
 const createReportRequest = async (req, res, next) => {
     try {
-        const { title, description, deadline, targetAsc } = req.body;
+        const { title, description, deadline, targetAsc, requiredMonth, requestedMetrics } = req.body;
 
         const request = await ReportRequest.create({
             title,
             description,
             deadline,
             targetAsc,
+            requiredMonth,
+            requestedMetrics,
             requestedBy: req.user._id
         });
 

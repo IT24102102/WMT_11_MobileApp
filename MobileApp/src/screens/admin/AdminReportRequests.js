@@ -22,16 +22,34 @@ const AdminReportRequests = ({ navigation }) => {
   const [ascs, setAscs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [districts, setDistricts] = useState([]);
+  const [selectedDistrict, setSelectedDistrict] = useState('');
   
   // Form State
   const [form, setForm] = useState({
-    title: '',
     description: '',
-    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    requiredMonth: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+    requestedMetrics: [],
     targetAsc: ''
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  const metricOptions = [
+    'Farmer Count',
+    'Crop Count',
+    'Harvest Volume',
+    'Machinery Usage',
+    'Fertilizer Distribution',
+    'Pest Reports'
+  ];
 
+  const monthOptions = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  
   useEffect(() => {
     fetchData();
   }, []);
@@ -45,6 +63,11 @@ const AdminReportRequests = ({ navigation }) => {
       ]);
       setRequests(reqRes.data);
       setAscs(ascRes.data);
+      
+      // Extract unique districts
+      const uniqueDistricts = [...new Set(ascRes.data.map(asc => asc.district))].sort();
+      setDistricts(uniqueDistricts);
+      if (uniqueDistricts.length > 0) setSelectedDistrict(uniqueDistricts[0]);
     } catch (error) {
       console.error('Fetch Error:', error);
       Alert.alert('Error', 'Failed to fetch data');
@@ -54,17 +77,34 @@ const AdminReportRequests = ({ navigation }) => {
   };
 
   const handleCreateRequest = async () => {
-    if (!form.title || !form.description || !form.targetAsc) {
+    // Generate title automatically from metrics
+    let generatedTitle = 'Report Request';
+    if (form.requestedMetrics.length > 0) {
+      generatedTitle = `Report: ${form.requestedMetrics.join(', ')}`;
+      if (generatedTitle.length > 50) generatedTitle = generatedTitle.substring(0, 47) + '...';
+    } else {
+      generatedTitle = `Data Request - ${form.requiredMonth}`;
+    }
+
+    if (!form.description || !form.targetAsc || !form.requiredMonth) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
 
     try {
       setLoading(true);
-      await apiClient.post('/reports/requests', form);
+      await apiClient.post('/reports/requests', {
+        ...form,
+        title: generatedTitle
+      });
       Alert.alert('Success', 'Report request sent to ASC Center');
       setModalVisible(false);
-      setForm({ title: '', description: '', deadline: new Date(), targetAsc: '' });
+      setForm({ 
+        description: '', 
+        requiredMonth: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }), 
+        requestedMetrics: [],
+        targetAsc: '' 
+      });
       fetchData();
     } catch (error) {
       Alert.alert('Error', 'Failed to create request');
@@ -93,10 +133,21 @@ const AdminReportRequests = ({ navigation }) => {
           <Text style={[styles.statusText, { color: item.status === 'Submitted' ? '#166534' : '#ef4444' }]}>{item.status}</Text>
         </View>
       </View>
-      <Text style={styles.cardTarget}>📍 {item.targetAsc?.name}</Text>
+      <Text style={styles.cardTarget}>📍 {item.targetAsc?.name} ({item.targetAsc?.district})</Text>
       <Text style={styles.cardDesc} numberOfLines={2}>{item.description}</Text>
+      
+      {item.requestedMetrics && item.requestedMetrics.length > 0 && (
+        <View style={styles.metricsContainer}>
+          {item.requestedMetrics.map((m, i) => (
+            <View key={i} style={styles.miniMetricBadge}>
+              <Text style={styles.miniMetricText}>{m}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
       <View style={styles.cardFooter}>
-        <Text style={styles.cardDeadline}>📅 Deadline: {new Date(item.deadline).toLocaleDateString()}</Text>
+        <Text style={styles.cardDeadline}>📅 For: {item.requiredMonth}</Text>
         <TouchableOpacity onPress={() => handleDelete(item._id)}>
           <Ionicons name="trash-outline" size={20} color="#ef4444" />
         </TouchableOpacity>
@@ -148,17 +199,53 @@ const AdminReportRequests = ({ navigation }) => {
             </View>
 
             <ScrollView>
-              <Text style={styles.label}>Report Title</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="e.g. Monthly Harvest Summary" 
-                value={form.title}
-                onChangeText={(t) => setForm({...form, title: t})}
-              />
-
-              <Text style={styles.label}>Target ASC Center</Text>
+              <Text style={styles.label}>Required Details (Tick multiple)</Text>
               <View style={styles.ascPicker}>
-                {ascs.map(asc => (
+                {metricOptions.map(metric => (
+                  <TouchableOpacity 
+                    key={metric} 
+                    style={[
+                      styles.ascChip, 
+                      form.requestedMetrics.includes(metric) && styles.activeMetricChip
+                    ]}
+                    onPress={() => {
+                      const current = [...form.requestedMetrics];
+                      if (current.includes(metric)) {
+                        setForm({...form, requestedMetrics: current.filter(m => m !== metric)});
+                      } else {
+                        setForm({...form, requestedMetrics: [...current, metric]});
+                      }
+                    }}
+                  >
+                    <View style={styles.chipContent}>
+                      {form.requestedMetrics.includes(metric) && (
+                        <Ionicons name="checkmark-circle" size={14} color="#fff" style={{ marginRight: 4 }} />
+                      )}
+                      <Text style={[
+                        styles.ascChipText, 
+                        form.requestedMetrics.includes(metric) && styles.activeAscChipText
+                      ]}>{metric}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Select District</Text>
+              <View style={styles.ascPicker}>
+                {districts.map(district => (
+                  <TouchableOpacity 
+                    key={district} 
+                    style={[styles.ascChip, selectedDistrict === district && styles.activeAscChip]}
+                    onPress={() => setSelectedDistrict(district)}
+                  >
+                    <Text style={[styles.ascChipText, selectedDistrict === district && styles.activeAscChipText]}>{district}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Select ASC Center</Text>
+              <View style={styles.ascPicker}>
+                {ascs.filter(asc => asc.district === selectedDistrict).map(asc => (
                   <TouchableOpacity 
                     key={asc._id} 
                     style={[styles.ascChip, form.targetAsc === asc._id && styles.activeAscChip]}
@@ -167,7 +254,12 @@ const AdminReportRequests = ({ navigation }) => {
                     <Text style={[styles.ascChipText, form.targetAsc === asc._id && styles.activeAscChipText]}>{asc.name}</Text>
                   </TouchableOpacity>
                 ))}
+                {ascs.filter(asc => asc.district === selectedDistrict).length === 0 && (
+                  <Text style={styles.emptySubText}>No ASCs found in this district.</Text>
+                )}
               </View>
+
+
 
               <Text style={styles.label}>Detailed Instructions</Text>
               <TextInput 
@@ -178,18 +270,51 @@ const AdminReportRequests = ({ navigation }) => {
                 onChangeText={(t) => setForm({...form, description: t})}
               />
 
-              <Text style={styles.label}>Submission Deadline</Text>
-              <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
+              <Text style={styles.label}>Required Month of Report</Text>
+              <TouchableOpacity style={styles.dateBtn} onPress={() => setShowMonthPicker(true)}>
                 <Ionicons name="calendar" size={20} color="#1b5e20" />
-                <Text style={styles.dateText}>{form.deadline.toLocaleDateString()}</Text>
+                <Text style={styles.dateText}>{form.requiredMonth}</Text>
               </TouchableOpacity>
 
-              {showDatePicker && (
-                <DateTimePicker
-                  value={form.deadline}
-                  mode="date"
-                  onChange={(e, d) => { setShowDatePicker(false); if(d) setForm({...form, deadline: d}); }}
-                />
+              {showMonthPicker && (
+                <Modal transparent animationType="fade">
+                  <View style={styles.miniModalOverlay}>
+                    <View style={styles.monthPickerContent}>
+                      <Text style={styles.miniModalTitle}>Select Month</Text>
+                      <ScrollView style={{ maxHeight: 300 }}>
+                        {monthOptions.map((month, index) => {
+                          const currentMonthIndex = new Date().getMonth();
+                          const isFuture = index > currentMonthIndex;
+                          
+                          return (
+                            <TouchableOpacity 
+                              key={month} 
+                              style={[styles.monthOption, isFuture && { opacity: 0.3 }]}
+                              onPress={() => {
+                                if (isFuture) {
+                                  Alert.alert('Invalid Selection', 'You cannot request a report for a future month.');
+                                  return;
+                                }
+                                setForm({...form, requiredMonth: `${month} ${new Date().getFullYear()}`});
+                                setShowMonthPicker(false);
+                              }}
+                            >
+                              <Text style={[styles.monthOptionText, isFuture && { color: '#94a3b8' }]}>
+                                {month} {isFuture ? '(Future)' : ''}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                      <TouchableOpacity 
+                        style={styles.closeMiniModal}
+                        onPress={() => setShowMonthPicker(false)}
+                      >
+                        <Text style={styles.closeMiniModalText}>Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </Modal>
               )}
 
               <TouchableOpacity 
@@ -197,7 +322,7 @@ const AdminReportRequests = ({ navigation }) => {
                 onPress={handleCreateRequest}
                 disabled={loading}
               >
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Blast Request 🚀</Text>}
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Send Report Request</Text>}
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -232,13 +357,26 @@ const styles = StyleSheet.create({
   ascPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   ascChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: '#f1f5f9' },
   activeAscChip: { backgroundColor: '#1b5e20' },
+  activeMetricChip: { backgroundColor: '#2e7d32', borderColor: '#1b5e20', borderWidth: 1 },
   ascChipText: { fontSize: 12, color: '#64748b' },
   activeAscChipText: { color: '#fff', fontWeight: 'bold' },
+  chipContent: { flexDirection: 'row', alignItems: 'center' },
+  metricsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 10 },
+  miniMetricBadge: { backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#e2e8f0' },
+  miniMetricText: { fontSize: 10, color: '#475569', fontWeight: '500' },
   dateBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', padding: 15, borderRadius: 12, gap: 10 },
   dateText: { fontSize: 15, color: '#1e293b' },
   submitBtn: { backgroundColor: '#1b5e20', padding: 18, borderRadius: 15, alignItems: 'center', marginTop: 30, marginBottom: 20 },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  emptyText: { textAlign: 'center', marginTop: 50, color: '#94a3b8' }
+  emptyText: { textAlign: 'center', marginTop: 50, color: '#94a3b8' },
+  emptySubText: { fontSize: 12, color: '#94a3b8', fontStyle: 'italic', marginTop: 5 },
+  miniModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  monthPickerContent: { backgroundColor: '#fff', width: '80%', borderRadius: 20, padding: 20 },
+  miniModalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginBottom: 15, textAlign: 'center' },
+  monthOption: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  monthOptionText: { fontSize: 16, color: '#334155', textAlign: 'center' },
+  closeMiniModal: { marginTop: 15, padding: 12, alignItems: 'center' },
+  closeMiniModalText: { color: '#ef4444', fontWeight: 'bold' }
 });
 
 export default AdminReportRequests;

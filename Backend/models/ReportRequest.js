@@ -9,9 +9,16 @@ const reportRequestSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add a description of what is needed']
     },
+    requiredMonth: {
+        type: String,
+        required: [true, 'Please specify the required month for the report']
+    },
+    requestedMetrics: {
+        type: [String],
+        default: []
+    },
     deadline: {
-        type: Date,
-        required: [true, 'Please set a deadline']
+        type: Date
     },
     targetAsc: {
         type: mongoose.Schema.Types.ObjectId,
