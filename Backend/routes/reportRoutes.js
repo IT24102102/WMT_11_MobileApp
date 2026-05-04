@@ -22,7 +22,7 @@ if (!fs.existsSync(uploadDir)) {
 // Multer Config for PDF reports
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/reports/');
+        cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
         cb(null, `report-${req.params.id}-${Date.now()}.pdf`);
@@ -32,7 +32,7 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage: storage,
     fileFilter: (req, file, cb) => {
-        if (file.mimetype === "application/pdf") {
+        if (file.mimetype === "application/pdf" || file.originalname.endsWith('.pdf')) {
             cb(null, true);
         } else {
             cb(new Error("Only PDF files are allowed"), false);
