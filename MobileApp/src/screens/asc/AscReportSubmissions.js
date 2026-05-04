@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../../context/AuthContext';
 import apiClient from '../../api/apiClient';
 import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
 
 const AscReportSubmissions = ({ navigation }) => {
   const [requests, setRequests] = useState([]);
@@ -22,6 +23,7 @@ const AscReportSubmissions = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedReq, setSelectedReq] = useState(null);
   const [reportText, setReportText] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     fetchRequests();
@@ -56,6 +58,42 @@ const AscReportSubmissions = ({ navigation }) => {
       fetchRequests();
     } catch (error) {
       Alert.alert('Error', 'Failed to submit report');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (requestId) => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled) {
+        const file = result.assets[0];
+        
+        const formData = new FormData();
+        formData.append('reportPdf', {
+          uri: file.uri,
+          name: file.name,
+          type: 'application/pdf',
+        });
+
+        setLoading(true);
+        await apiClient.post(`/reports/requests/${requestId}/upload`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        Alert.alert('Success', 'Report PDF uploaded successfully');
+        setModalVisible(false);
+        fetchRequests();
+      }
+    } catch (error) {
+      console.error('Upload Error:', error);
+      Alert.alert('Error', 'Failed to upload PDF. Ensure it is a valid PDF file.');
     } finally {
       setLoading(false);
     }
@@ -112,21 +150,38 @@ const AscReportSubmissions = ({ navigation }) => {
             <Text style={styles.modalTitle}>Submit Report</Text>
             <Text style={styles.modalSubtitle}>{selectedReq?.title}</Text>
             
+            <Text style={styles.label}>Option 1: Write Report</Text>
             <TextInput 
               style={styles.textArea}
               placeholder="Type your report findings here..."
               multiline
-              numberOfLines={10}
+              numberOfLines={6}
               value={reportText}
               onChangeText={setReportText}
             />
+
+            <View style={styles.dividerSection}>
+              <View style={styles.line} />
+              <Text style={styles.orText}>OR</Text>
+              <View style={styles.line} />
+            </View>
+
+            <Text style={styles.label}>Option 2: Upload PDF Report</Text>
+            <TouchableOpacity 
+              style={styles.uploadArea}
+              onPress={() => handleFileUpload(selectedReq._id)}
+            >
+              <Ionicons name="cloud-upload-outline" size={30} color="#1b5e20" />
+              <Text style={styles.uploadAreaText}>Click to select and upload PDF</Text>
+              <Text style={styles.uploadSubText}>Ideal for generated reports</Text>
+            </TouchableOpacity>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.submitBtn} onPress={handleSubmitReport} disabled={loading}>
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Submit Now</Text>}
+              <TouchableOpacity style={styles.submitBtn} onPress={handleSubmitReport} disabled={loading || !reportText.trim()}>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Submit Text Report</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -155,7 +210,17 @@ const styles = StyleSheet.create({
   modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 25 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#1e293b', marginBottom: 5 },
   modalSubtitle: { fontSize: 14, color: '#64748b', marginBottom: 20 },
-  textArea: { backgroundColor: '#f1f5f9', borderRadius: 12, padding: 15, height: 200, textAlignVertical: 'top', fontSize: 15 },
+  label: { fontSize: 14, fontWeight: 'bold', color: '#334155', marginBottom: 8, marginTop: 15 },
+  textArea: { backgroundColor: '#f1f5f9', borderRadius: 12, padding: 15, height: 120, textAlignVertical: 'top', fontSize: 15 },
+  
+  dividerSection: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
+  line: { flex: 1, height: 1, backgroundColor: '#e2e8f0' },
+  orText: { marginHorizontal: 10, fontSize: 12, color: '#94a3b8', fontWeight: 'bold' },
+  
+  uploadArea: { backgroundColor: '#f0fdf4', borderStyle: 'dashed', borderWidth: 2, borderColor: '#1b5e20', borderRadius: 16, padding: 20, alignItems: 'center', justifyContent: 'center' },
+  uploadAreaText: { fontSize: 14, color: '#1b5e20', fontWeight: 'bold', marginTop: 10 },
+  uploadSubText: { fontSize: 11, color: '#166534', marginTop: 4 },
+
   modalButtons: { flexDirection: 'row', gap: 10, marginTop: 25 },
   cancelBtn: { flex: 1, padding: 15, alignItems: 'center' },
   cancelBtnText: { color: '#64748b', fontWeight: 'bold' },

@@ -35,6 +35,7 @@ import PaymentScreen from '../screens/PaymentScreen';
 import WeatherForecastScreen from '../screens/WeatherForecastScreen';
 import AdminReportRequests from '../screens/admin/AdminReportRequests';
 import AscReportSubmissions from '../screens/asc/AscReportSubmissions';
+import PrepareReportScreen from '../screens/asc/PrepareReportScreen';
 
 const Stack = createStackNavigator();
 
@@ -116,6 +117,7 @@ const AppNavigator = () => {
             <Stack.Screen name="WeatherForecast" component={WeatherForecastScreen} />
             <Stack.Screen name="AdminReportRequests" component={AdminReportRequests} />
             <Stack.Screen name="AscReportSubmissions" component={AscReportSubmissions} />
+            <Stack.Screen name="PrepareReport" component={PrepareReportScreen} />
           </>
         )}
       </Stack.Navigator>

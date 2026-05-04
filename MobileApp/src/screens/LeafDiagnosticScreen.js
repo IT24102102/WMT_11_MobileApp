@@ -17,6 +17,8 @@ const LeafDiagnosticScreen = ({ navigation }) => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
+      allowsEditing: true,    // 👈 Allows the user to crop the image
+      aspect: [1, 1],         // 👈 Forces a perfect square crop
       quality: 1, // Use highest quality to avoid compression artifacts confusing the AI
     });
 
@@ -36,6 +38,8 @@ const LeafDiagnosticScreen = ({ navigation }) => {
 
     let result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
+      allowsEditing: true,    // 👈 Allows the user to crop the image
+      aspect: [1, 1],         // 👈 Forces a perfect square crop
       quality: 1, // Use highest quality
     });
 

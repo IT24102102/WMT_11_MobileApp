@@ -41,6 +41,10 @@ const reportRequestSchema = new mongoose.Schema({
     },
     submittedAt: {
         type: Date
+    },
+    submissionPdf: {
+        type: String, // Path to the uploaded PDF file
+        default: ''
     }
 }, { timestamps: true });
 

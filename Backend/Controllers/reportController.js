@@ -86,10 +86,38 @@ const deleteRequest = async (req, res, next) => {
     }
 };
 
+// @desc    Upload PDF submission (ASC Officer)
+// @route   POST /api/reports/requests/:id/upload
+const uploadPdfReport = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "Please upload a PDF file" });
+        }
+
+        const request = await ReportRequest.findById(req.params.id);
+        if (!request) {
+            return res.status(404).json({ message: "Request not found" });
+        }
+
+        request.submissionPdf = req.file.path;
+        request.status = 'Submitted';
+        request.submittedAt = Date.now();
+
+        await request.save();
+        res.json({
+            message: "Report PDF uploaded successfully",
+            request
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createReportRequest,
     getAllRequests,
     getMyAscRequests,
     submitReport,
+    uploadPdfReport,
     deleteRequest
 };

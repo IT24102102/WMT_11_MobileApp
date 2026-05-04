@@ -36,6 +36,7 @@ const ASCDashboard = ({ navigation }) => {
     { id: 'compensations', title: t('asc.compClaims'), icon: '📋', desc: t('asc.compClaimsDesc'), endpoint: '/compensation' },
     { id: 'machinery', title: t('asc.machineryServices'), icon: '🚜', desc: t('asc.machineryServicesDesc'), endpoint: '/machinery/regional-data' },
     { id: 'reports', title: 'Assigned Reports', icon: '📝', desc: 'Manage report tasks from Admin.', screen: 'AscReportSubmissions' },
+    { id: 'prepare_report', title: 'Generate Reports', icon: '📊', desc: 'Prepare and download PDF reports.', screen: 'PrepareReport' },
   ];
 
   useEffect(() => {
